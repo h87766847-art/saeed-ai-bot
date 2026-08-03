@@ -1,118 +1,289 @@
-from memory import (
-    get_memories,
-    save_message,
-    get_recent_messages,
-    get_profile
+import sqlite3
+import datetime
+
+
+from memory_manager import (
+    init_memory_manager,
+    add_memory
 )
 
-from smart_memory import smart_remember
-
-from preferences import detect_preferences
 
 
-
-# =========================
-# Smart Memory
-# =========================
-
-def remember_important_information(text):
-
-    smart_remember(text)
-
-    detect_preferences(text)
+DATABASE = "saeed_memory.db"
 
 
 
-# =========================
-# Memory Context
-# =========================
-
-def build_memory_context():
-
-    memories = get_memories()
-
-    profile = get_profile()
-
-
-    result = ""
+init_memory_manager()
 
 
 
-    if profile:
-
-        result += "\nترجیحات و اطلاعات حسین:\n"
 
 
-        for key, value in profile:
+def connect():
 
-            result += (
-                f"{key}: {value}\n"
-            )
+    return sqlite3.connect(
+        DATABASE
+    )
 
 
 
-    if memories:
-
-        result += "\nخاطرات مهم:\n"
-
-
-        for category, content in memories:
-
-            result += (
-                "- "
-                +
-                content
-                +
-                "\n"
-            )
 
 
 
-    if not result:
+def init_database():
 
-        result = (
-            "حافظه خالی است."
+    db = connect()
+
+    cursor = db.cursor()
+
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS conversations (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        role TEXT,
+
+        content TEXT,
+
+        time TEXT
+
+    )
+    """)
+
+
+    db.commit()
+
+    db.close()
+
+
+
+
+
+
+
+def save_conversation(role, content):
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+    cursor.execute(
+        """
+
+        INSERT INTO conversations
+
+        (role,content,time)
+
+        VALUES (?,?,?)
+
+        """,
+
+        (
+
+            role,
+
+            content,
+
+            str(datetime.datetime.now())
+
         )
 
-
-    return result
-
-
-
-# =========================
-# Conversation
-# =========================
-
-def save_conversation(
-    role,
-    text
-):
-
-    save_message(
-        role,
-        text
     )
+
+
+    db.commit()
+
+    db.close()
+
+
+
+
 
 
 
 def get_context_messages():
 
-    data = get_recent_messages(
-        30
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+    cursor.execute(
+        """
+
+        SELECT role,content
+
+        FROM conversations
+
+        ORDER BY id DESC
+
+        LIMIT 10
+
+        """
     )
+
+
+    rows = cursor.fetchall()
+
+
+    db.close()
 
 
     messages = []
 
 
-    for role, content in data:
+
+    for role,content in reversed(rows):
 
         messages.append(
+
             {
-                "role": role,
-                "content": content
+
+                "role":role,
+
+                "content":content
+
             }
+
         )
 
 
-    return messages        
+    return messages
+
+
+
+
+
+
+
+def remember_important_information(text):
+
+
+    lower = text.lower()
+
+
+
+    if "من" in text:
+
+
+        add_memory(
+
+            "user",
+
+            text
+
+        )
+
+
+
+
+    if "پروژه" in text:
+
+
+        add_memory(
+
+            "projects",
+
+            text
+
+        )
+
+
+
+
+
+    if "دوست دارم" in text or "علاقه" in text:
+
+
+        add_memory(
+
+            "preferences",
+
+            text
+
+        )
+
+
+
+
+
+    if "هدف" in text:
+
+
+        add_memory(
+
+            "goals",
+
+            text
+
+        )
+
+
+
+
+
+
+
+
+
+def build_memory_context():
+
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+    cursor.execute(
+
+        """
+
+        SELECT role,content
+
+        FROM conversations
+
+        ORDER BY id DESC
+
+        LIMIT 5
+
+        """
+
+    )
+
+
+    data = cursor.fetchall()
+
+
+    db.close()
+
+
+
+    result = ""
+
+
+    for role,content in reversed(data):
+
+        result += (
+
+            role
+
+            +
+
+            ": "
+
+            +
+
+            content
+
+            +
+
+            "\n"
+
+        )
+
+
+
+    return result

@@ -25,7 +25,13 @@ from planner import planning_context
 
 from reflection import create_reflection_prompt
 
+from tool_router import check_tools
 
+
+
+# =========================
+# Render
+# =========================
 
 class HealthHandler(BaseHTTPRequestHandler):
 
@@ -35,9 +41,8 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(
-            b"Saeed Core v5 alive"
+            b"Saeed Core v6.2 alive"
         )
-
 
 
 def run_server():
@@ -69,15 +74,15 @@ SYSTEM = """
 
 ویژگی‌ها:
 
-- منطقی
 - دقیق
+- منطقی
 - خلاق
 - کمک‌کننده
 
-قبل از پاسخ:
-هدف کاربر را بفهم.
+قبل از جواب:
 حافظه را بررسی کن.
-بهترین پاسخ را بساز.
+هدف را بفهم.
+بهترین راه را انتخاب کن.
 
 حسین را با نام حسین صدا کن.
 
@@ -93,6 +98,7 @@ GROQ_KEY = os.environ["GROQ_KEY"]
 client = Groq(
     api_key=GROQ_KEY
 )
+
 
 
 
@@ -112,9 +118,35 @@ async def chat(update, context):
     )
 
 
+    # بررسی ابزار
+
+    tool = check_tools(
+        text
+    )
+
+
+    if tool["used"]:
+
+        answer = tool["result"]
+
+        save_conversation(
+            "assistant",
+            answer
+        )
+
+
+        await update.message.reply_text(
+            answer
+        )
+
+        return
+
+
+
     plan = planning_context(
         text
     )
+
 
 
     messages = [
@@ -142,9 +174,10 @@ async def chat(update, context):
     )
 
 
+
     try:
 
-        first_answer = client.chat.completions.create(
+        response = client.chat.completions.create(
 
             model="llama-3.1-8b-instant",
 
@@ -156,15 +189,12 @@ async def chat(update, context):
 
 
         answer = (
-            first_answer
+            response
             .choices[0]
             .message
             .content
         )
 
-
-
-        # Reflection
 
         review_prompt = create_reflection_prompt(
             answer,
@@ -177,12 +207,10 @@ async def chat(update, context):
             model="llama-3.1-8b-instant",
 
             messages=[
-
                 {
                     "role":"user",
                     "content":review_prompt
                 }
-
             ],
 
             temperature=0.3
@@ -196,7 +224,6 @@ async def chat(update, context):
             .message
             .content
         )
-
 
 
         save_conversation(
@@ -228,7 +255,6 @@ app = Application.builder().token(
 ).build()
 
 
-
 app.add_handler(
     MessageHandler(
         filters.TEXT & ~filters.COMMAND,
@@ -239,7 +265,7 @@ app.add_handler(
 
 
 print(
-    "Saeed Core v5 running..."
+    "Saeed Core v6.2 running..."
 )
 
 

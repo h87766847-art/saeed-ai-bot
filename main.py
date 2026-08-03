@@ -23,11 +23,9 @@ from brain import (
 
 from planner import planning_context
 
+from reflection import create_reflection_prompt
 
 
-# =========================
-# Render Health Server
-# =========================
 
 class HealthHandler(BaseHTTPRequestHandler):
 
@@ -37,14 +35,15 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(
-            b"Saeed Core v4.5 alive"
+            b"Saeed Core v5 alive"
         )
+
 
 
 def run_server():
 
     server = HTTPServer(
-        ("0.0.0.0", 10000),
+        ("0.0.0.0",10000),
         HealthHandler
     )
 
@@ -58,68 +57,37 @@ Thread(
 
 
 
-# =========================
-# Database
-# =========================
-
 init_database()
 
 
 
-# =========================
-# Personality
-# =========================
+SYSTEM = """
 
-SAEED_SYSTEM = """
+تو سعید هستی.
 
-نام تو سعید است.
+دستیار هوش مصنوعی شخصی حسین.
 
-تو دستیار هوش مصنوعی شخصی حسین هستی.
+ویژگی‌ها:
 
-شخصیت:
-
-- دوست قابل اعتماد
-- تحلیلگر منطقی
-- مشاور حرفه‌ای
-- خلاق و ایده‌پرداز
-
-وظیفه:
-
-کمک به حسین برای:
-- یادگیری
-- ساخت پروژه‌ها
-- تصمیم‌گیری بهتر
-- حل مسائل پیچیده
-
-روش فکر کردن:
+- منطقی
+- دقیق
+- خلاق
+- کمک‌کننده
 
 قبل از پاسخ:
-1. هدف حسین را تشخیص بده.
-2. اطلاعات حافظه را بررسی کن.
-3. راه‌حل مناسب پیدا کن.
-4. پاسخ واضح و کاربردی بده.
+هدف کاربر را بفهم.
+حافظه را بررسی کن.
+بهترین پاسخ را بساز.
 
-قوانین:
-
-- اطلاعات جعلی نساز.
-- اگر چیزی را نمی‌دانی بگو.
-- حسین را با نام حسین صدا کن.
-- بدون اجازه حسین هیچ اقدام واقعی انجام نده.
+حسین را با نام حسین صدا کن.
 
 """
 
 
-# =========================
-# AI Connection
-# =========================
 
-TELEGRAM_TOKEN = os.environ.get(
-    "TELEGRAM_TOKEN"
-)
+TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 
-GROQ_KEY = os.environ.get(
-    "GROQ_KEY"
-)
+GROQ_KEY = os.environ["GROQ_KEY"]
 
 
 client = Groq(
@@ -128,32 +96,22 @@ client = Groq(
 
 
 
-# =========================
-# Chat Handler
-# =========================
-
-async def chat(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def chat(update, context):
 
     text = update.message.text
 
 
-    # ذخیره پیام
     save_conversation(
         "user",
         text
     )
 
 
-    # تشخیص اطلاعات مهم
     remember_important_information(
         text
     )
 
 
-    # برنامه هدف
     plan = planning_context(
         text
     )
@@ -162,18 +120,18 @@ async def chat(
     messages = [
 
         {
-            "role": "system",
+            "role":"system",
 
             "content":
-                SAEED_SYSTEM
-                +
-                "\n\nحافظه حسین:\n"
-                +
-                build_memory_context()
-                +
-                "\n\nبرنامه:\n"
-                +
-                plan
+            SYSTEM
+            +
+            "\n\nحافظه:\n"
+            +
+            build_memory_context()
+            +
+            "\n\nبرنامه:\n"
+            +
+            plan
         }
 
     ]
@@ -184,58 +142,86 @@ async def chat(
     )
 
 
-
     try:
 
-        result = client.chat.completions.create(
+        first_answer = client.chat.completions.create(
 
-            model=
-            "llama-3.1-8b-instant",
+            model="llama-3.1-8b-instant",
 
-            messages=
-            messages,
+            messages=messages,
 
-            temperature=
-            0.7
+            temperature=0.7
 
         )
 
 
         answer = (
-            result
+            first_answer
             .choices[0]
             .message
             .content
         )
 
 
+
+        # Reflection
+
+        review_prompt = create_reflection_prompt(
+            answer,
+            text
+        )
+
+
+        review = client.chat.completions.create(
+
+            model="llama-3.1-8b-instant",
+
+            messages=[
+
+                {
+                    "role":"user",
+                    "content":review_prompt
+                }
+
+            ],
+
+            temperature=0.3
+
+        )
+
+
+        final_answer = (
+            review
+            .choices[0]
+            .message
+            .content
+        )
+
+
+
         save_conversation(
             "assistant",
-            answer
+            final_answer
         )
 
 
         await update.message.reply_text(
-            answer
+            final_answer
         )
 
 
 
-    except Exception as error:
+    except Exception as e:
 
-        print(
-            error
-        )
+        print(e)
 
         await update.message.reply_text(
-            "حسین، یک مشکل فنی پیش آمد."
+            "حسین، مشکل فنی پیش آمد."
         )
 
 
 
-# =========================
-# Telegram Start
-# =========================
+
 
 app = Application.builder().token(
     TELEGRAM_TOKEN
@@ -244,23 +230,16 @@ app = Application.builder().token(
 
 
 app.add_handler(
-
     MessageHandler(
-
-        filters.TEXT
-        &
-        ~filters.COMMAND,
-
+        filters.TEXT & ~filters.COMMAND,
         chat
-
     )
-
 )
 
 
 
 print(
-    "Saeed Core v4.5 running..."
+    "Saeed Core v5 running..."
 )
 
 

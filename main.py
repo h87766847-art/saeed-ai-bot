@@ -17,10 +17,7 @@ from telegram.ext import (
 from groq import Groq
 
 
-
-from memory import (
-    init_database
-)
+from memory import init_database
 
 
 from brain import (
@@ -31,24 +28,19 @@ from brain import (
 )
 
 
-from planner import (
-    planning_context
-)
+from planner import planning_context
 
 
-from reflection import (
-    create_reflection_prompt
-)
+from reflection import create_reflection_prompt
 
 
-from core_router import (
-    route_message
-)
+from self_evaluator import create_evaluation_prompt
 
 
-from knowledge_router import (
-    retrieve_knowledge
-)
+from core_router import route_message
+
+
+from knowledge_router import retrieve_knowledge
 
 
 from personality_core import (
@@ -61,7 +53,7 @@ from personality_core import (
 
 
 # =========================
-# Server
+# Health Server
 # =========================
 
 
@@ -74,7 +66,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(
-            b"Saeed Core v14.1 alive"
+            b"Saeed Core v15.1 alive"
         )
 
 
@@ -99,6 +91,7 @@ Thread(
 
 
 
+
 # =========================
 # Initialize
 # =========================
@@ -107,6 +100,7 @@ Thread(
 init_database()
 
 init_personality()
+
 
 
 
@@ -127,10 +121,10 @@ SYSTEM = f"""
 
 دستیار هوش مصنوعی شخصی {personality["user"]}.
 
-سبک رفتاری:
+
+سبک:
 
 {personality["style"]}
-
 
 
 قوانین:
@@ -138,13 +132,12 @@ SYSTEM = f"""
 {chr(10).join(personality["behavior_rules"])}
 
 
-
 همیشه:
 
-- پاسخ دقیق بده.
-- اگر چیزی را نمی‌دانی حدس قطعی نزن.
-- اطلاعات مرتبط از حافظه استفاده کن.
-- به حسین کمک کاربردی بده.
+- دقیق جواب بده.
+- منطقی تحلیل کن.
+- اگر مطمئن نیستی بگو.
+- از حافظه و دانش مرتبط استفاده کن.
 
 """
 
@@ -160,7 +153,6 @@ SYSTEM = f"""
 
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
-
 
 GROQ_KEY = os.environ["GROQ_KEY"]
 
@@ -191,10 +183,13 @@ async def chat(
 
 
 
+
+
     save_conversation(
         "user",
         text
     )
+
 
 
 
@@ -206,12 +201,16 @@ async def chat(
 
 
 
+
+    # =====================
     # Router
+    # =====================
 
 
     route = route_message(
         text
     )
+
 
 
 
@@ -256,6 +255,7 @@ async def chat(
                     "content":SYSTEM
                 },
 
+
                 {
                     "role":"user",
                     "content":route["data"]
@@ -299,17 +299,15 @@ async def chat(
 
 
 
-    # Knowledge
+    # =====================
+    # Memory + Knowledge
+    # =====================
 
 
     knowledge = retrieve_knowledge(
         text
     )
 
-
-
-
-    # Planner
 
 
     plan = planning_context(
@@ -320,7 +318,10 @@ async def chat(
 
 
 
+
+
     messages = [
+
 
         {
 
@@ -333,7 +334,7 @@ async def chat(
 
             +
 
-            "\n\nحافظه:\n"
+            "\n\nحافظه حسین:\n"
 
             +
 
@@ -361,6 +362,7 @@ async def chat(
 
         }
 
+
     ]
 
 
@@ -378,8 +380,11 @@ async def chat(
 
 
 
+
     try:
 
+
+        # جواب اولیه
 
 
         response = client.chat.completions.create(
@@ -397,7 +402,6 @@ async def chat(
 
 
 
-
         draft = (
 
             response
@@ -411,10 +415,13 @@ async def chat(
 
 
 
+
+
+
         # Reflection
 
 
-        reflection = create_reflection_prompt(
+        reflection_prompt = create_reflection_prompt(
 
             draft,
 
@@ -426,7 +433,7 @@ async def chat(
 
 
 
-        review = client.chat.completions.create(
+        reflection = client.chat.completions.create(
 
 
             model="llama-3.1-8b-instant",
@@ -438,7 +445,7 @@ async def chat(
 
                     "role":"user",
 
-                    "content":reflection
+                    "content":reflection_prompt
 
                 }
 
@@ -453,14 +460,75 @@ async def chat(
 
 
 
-        answer = (
+        improved = (
 
-            review
+            reflection
             .choices[0]
             .message
             .content
 
         )
+
+
+
+
+
+
+
+
+        # Self Evaluation
+
+
+        evaluation_prompt = create_evaluation_prompt(
+
+            text,
+
+            improved
+
+        )
+
+
+
+
+
+
+        evaluation = client.chat.completions.create(
+
+
+            model="llama-3.1-8b-instant",
+
+
+            messages=[
+
+                {
+
+                    "role":"user",
+
+                    "content":evaluation_prompt
+
+                }
+
+            ],
+
+
+            temperature=0.2
+
+        )
+
+
+
+
+
+
+        answer = (
+
+            evaluation
+            .choices[0]
+            .message
+            .content
+
+        )
+
 
 
 
@@ -474,6 +542,7 @@ async def chat(
             answer
 
         )
+
 
 
 
@@ -499,9 +568,10 @@ async def chat(
 
         await update.message.reply_text(
 
-            "حسین، یک خطای فنی پیش آمد."
+            "حسین، خطای فنی پیش آمد."
 
         )
+
 
 
 
@@ -543,7 +613,7 @@ app.add_handler(
 
 
 print(
-    "Saeed Core v14.1 running..."
+    "Saeed Core v15.1 running..."
 )
 
 

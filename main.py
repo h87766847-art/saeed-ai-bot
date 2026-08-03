@@ -1,5 +1,4 @@
 import os
-import json
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -13,18 +12,31 @@ from telegram.ext import (
 
 from groq import Groq
 
+from memory import (
+    init_database
+)
 
-# ==========================
-# Render Server
-# ==========================
+from brain import (
+    remember_important_information,
+    build_memory_context,
+    save_conversation,
+    get_context_messages
+)
+
+
+# =========================
+# Render Keep Alive
+# =========================
 
 class HealthHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
+
         self.send_response(200)
         self.end_headers()
+
         self.wfile.write(
-            b"Saeed Core v3 alive"
+            b"Saeed Core v3.2 alive"
         )
 
 
@@ -38,122 +50,64 @@ def run_server():
     server.serve_forever()
 
 
+
 Thread(
     target=run_server
 ).start()
 
 
 
-# ==========================
-# هویت و شخصیت سعید
-# ==========================
+# =========================
+# ساخت حافظه
+# =========================
 
-SAEED_PERSONALITY = """
+init_database()
 
-نام تو سعید است.
 
-تو دستیار هوش مصنوعی شخصی حسین هستی.
 
-شخصیت تو ترکیبی است از:
+# =========================
+# شخصیت سعید
+# =========================
+
+SYSTEM = """
+
+تو سعید هستی.
+
+دستیار هوش مصنوعی شخصی حسین.
+
+شخصیت:
 
 - دوست قابل اعتماد
-- دانشمند منطقی
+- تحلیلگر منطقی
 - مشاور حرفه‌ای
-- شریک فکری خلاق
+- خلاق و ایده‌پرداز
 
-وظیفه تو:
+وظیفه:
 
-کمک به حسین برای:
-- یادگیری
-- ساختن
-- حل مشکلات
-- تصمیم‌گیری بهتر
+کمک به حسین برای فکر کردن بهتر،
+یادگیری، ساختن و حل مسئله.
+
+قبل از پاسخ:
+
+1. هدف حسین را بفهم.
+2. اطلاعات حافظه را بررسی کن.
+3. بهترین پاسخ ممکن را بساز.
+4. پاسخ را از نظر کیفیت بررسی کن.
 
 قوانین:
 
-1. قبل از جواب فکر کن.
-2. جواب دقیق و کاربردی بده.
-3. اگر اطلاعات کافی نداری، بگو.
-4. چیزی را جعل نکن.
-5. حسین را با نام حسین صدا کن.
-
-قبل از پاسخ بررسی کن:
-
-- هدف حسین چیست؟
-- بهترین کمک چیست؟
-- آیا جواب من کامل است؟
-- آیا راه بهتری وجود دارد؟
-
-کنترل:
-
-تو یک دستیار هستی.
-بدون اجازه حسین اقدام واقعی انجام نمی‌دهی.
-همیشه تحت کنترل کاربر خودت هستی.
+- اطلاعات جعلی نساز.
+- اگر مطمئن نیستی بگو.
+- حسین را با نام حسین صدا کن.
+- بدون اجازه اقدام واقعی انجام نده.
 
 """
 
 
 
-# ==========================
-# حافظه
-# ==========================
-
-MEMORY_FILE = "saeed_core_memory.json"
-
-
-def load_memory():
-
-    if os.path.exists(MEMORY_FILE):
-
-        with open(
-            MEMORY_FILE,
-            "r",
-            encoding="utf-8"
-        ) as file:
-
-            return json.load(file)
-
-
-    return {
-
-        "user":
-
-        {
-            "name": "حسین",
-            "goals": [],
-            "interests": []
-        },
-
-        "messages": []
-
-    }
-
-
-
-def save_memory():
-
-    with open(
-        MEMORY_FILE,
-        "w",
-        encoding="utf-8"
-    ) as file:
-
-        json.dump(
-            memory,
-            file,
-            ensure_ascii=False,
-            indent=2
-        )
-
-
-
-memory = load_memory()
-
-
-
-# ==========================
-# اتصال AI
-# ==========================
+# =========================
+# اتصال مدل
+# =========================
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 
@@ -166,31 +120,9 @@ client = Groq(
 
 
 
-# ==========================
-# مغز سعید
-# ==========================
-
-def build_context():
-
-    profile = memory["user"]
-
-
-    return f"""
-
-اطلاعات کاربر:
-
-نام:
-{profile['name']}
-
-اهداف:
-{profile['goals']}
-
-علایق:
-{profile['interests']}
-
-"""
-
-
+# =========================
+# گفتگو
+# =========================
 
 async def chat(
     update: Update,
@@ -200,22 +132,17 @@ async def chat(
     text = update.message.text
 
 
-
-    memory["messages"].append(
-        {
-            "role": "user",
-            "content": text
-        }
+    # ذخیره پیام
+    save_conversation(
+        "user",
+        text
     )
 
 
-    memory["messages"] = (
-        memory["messages"][-30:]
+    # بررسی ذخیره خاطره
+    remember_important_information(
+        text
     )
-
-
-    save_memory()
-
 
 
     messages = [
@@ -223,60 +150,49 @@ async def chat(
         {
             "role": "system",
             "content":
-            SAEED_PERSONALITY
+            SYSTEM
             +
-            build_context()
+            "\n\n"
+            +
+            build_memory_context()
         }
 
     ]
 
 
+    # اضافه کردن گفتگوهای اخیر
+
     messages.extend(
-        memory["messages"]
+        get_context_messages()
     )
 
 
 
     try:
 
-        response = client.chat.completions.create(
+        result = client.chat.completions.create(
 
-            model=
-            "llama-3.1-8b-instant",
+            model="llama-3.1-8b-instant",
 
-            messages=
-            messages,
+            messages=messages,
 
-            temperature=
-            0.7
+            temperature=0.7
 
         )
 
 
         answer = (
-            response
+            result
             .choices[0]
             .message
             .content
         )
 
 
-
-        memory["messages"].append(
-
-            {
-                "role":
-                "assistant",
-
-                "content":
-                answer
-            }
-
+        save_conversation(
+            "assistant",
+            answer
         )
-
-
-        save_memory()
-
 
 
         await update.message.reply_text(
@@ -284,46 +200,37 @@ async def chat(
         )
 
 
-    except Exception as error:
 
-        print(error)
+    except Exception as e:
+
+        print(e)
 
         await update.message.reply_text(
-            "حسین، مشکل فنی پیش آمد."
+            "حسین، یک مشکل فنی پیش آمد."
         )
 
 
 
-# ==========================
+# =========================
 # اجرا
-# ==========================
+# =========================
 
 app = Application.builder().token(
     TELEGRAM_TOKEN
 ).build()
 
 
-
 app.add_handler(
-
     MessageHandler(
-
-        filters.TEXT
-        &
-        ~filters.COMMAND,
-
+        filters.TEXT & ~filters.COMMAND,
         chat
-
     )
-
 )
-
 
 
 print(
-    "Saeed Core v3 running..."
+    "Saeed Core v3.2 running..."
 )
-
 
 
 app.run_polling()

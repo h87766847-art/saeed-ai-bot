@@ -1,0 +1,115 @@
+import sqlite3
+import datetime
+
+
+DATABASE = "saeed_memory.db"
+
+
+
+def connect():
+
+    return sqlite3.connect(
+        DATABASE
+    )
+
+
+
+def init_knowledge():
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS knowledge (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        title TEXT,
+
+        content TEXT,
+
+        created TEXT
+
+    )
+    """)
+
+
+    db.commit()
+
+    db.close()
+
+
+
+
+
+def add_knowledge(title, content):
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+    cursor.execute(
+        """
+        INSERT INTO knowledge
+        (title, content, created)
+
+        VALUES (?,?,?)
+        """,
+
+        (
+            title,
+            content,
+            str(datetime.datetime.now())
+        )
+    )
+
+
+    db.commit()
+
+    db.close()
+
+
+    return "دانش ذخیره شد."
+
+
+
+
+
+def search_knowledge(query):
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+    cursor.execute(
+        """
+        SELECT title, content
+
+        FROM knowledge
+
+        WHERE content LIKE ?
+
+        OR title LIKE ?
+
+        LIMIT 5
+
+        """,
+
+        (
+            "%" + query + "%",
+            "%" + query + "%"
+        )
+    )
+
+
+    result = cursor.fetchall()
+
+
+    db.close()
+
+
+    return result

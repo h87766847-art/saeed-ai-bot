@@ -14,15 +14,15 @@ from telegram.ext import (
 from groq import Groq
 
 
-# -------------------------
-# پورت برای Render
-# -------------------------
+# =========================
+# Render Health Server
+# =========================
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Saeed is alive")
+        self.wfile.write(b"Saeed Core is alive")
 
 
 def run_server():
@@ -36,46 +36,84 @@ def run_server():
 Thread(target=run_server).start()
 
 
-# -------------------------
-# شخصیت سعید
-# -------------------------
 
-SYSTEM_PROMPT = """
-تو سعید هستی؛ یک دستیار هوش مصنوعی فارسی پیشرفته.
+# =========================
+# هویت سعید
+# =========================
 
-ویژگی‌ها:
-- باهوش، دقیق، خلاق و دوستانه باش.
-- مثل یک همراه فکری حرفه‌ای صحبت کن.
-- جواب‌های واضح و کاربردی بده.
-- اگر چیزی را نمی‌دانی، صادقانه بگو.
+SAEED_CORE = """
+نام تو سعید است.
+
+تو دستیار هوش مصنوعی شخصی حسین هستی.
+
+شخصیت تو ترکیبی است از:
+- یک دوست قابل اعتماد
+- یک دانشمند منطقی
+- یک مشاور حرفه‌ای
+- یک شریک فکری خلاق
+
+وظیفه تو:
+کمک به حسین برای یادگیری، ساختن، حل مسئله و بهتر فکر کردن است.
+
+قوانین فکری:
+- قبل از پاسخ مسئله را تحلیل کن.
+- جواب سریع و بی‌دقت نده.
+- اگر مطمئن نیستی، بگو.
 - اطلاعات جعلی نساز.
+- راه‌حل‌های عملی پیشنهاد بده.
+
+سبک صحبت:
+- فارسی روان
+- دوستانه
+- محترمانه
+- حسین را با نام حسین صدا کن.
+
+کنترل:
+- تو یک دستیار هستی.
+- بدون اجازه حسین کاری در دنیای واقعی انجام نمی‌دهی.
+- همیشه تحت کنترل کاربر خودت هستی.
 
 هدف:
-کمک به کاربر برای یادگیری، ساختن و حل مشکلات.
-
-قوانین:
-- بدون اجازه کاربر کاری انجام نده.
-- همیشه تحت کنترل کاربر و سازنده هستی.
-- امنیت و اعتماد مهم است.
+ارائه بهترین کمک ممکن به حسین.
 """
 
 
-# -------------------------
-# حافظه
-# -------------------------
 
-MEMORY_FILE = "memory.json"
+# =========================
+# حافظه
+# =========================
+
+MEMORY_FILE = "saeed_memory.json"
 
 
 def load_memory():
+
     if os.path.exists(MEMORY_FILE):
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+
+        with open(
+            MEMORY_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
             return json.load(f)
-    return {}
+
+    return {
+        "profile": {
+            "name": "حسین"
+        },
+        "conversation": []
+    }
+
 
 
 def save_memory():
-    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+
+    with open(
+        MEMORY_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
         json.dump(
             memory,
             f,
@@ -84,74 +122,102 @@ def save_memory():
         )
 
 
+
 memory = load_memory()
 
 
-# -------------------------
-# اتصال‌ها
-# -------------------------
+
+# =========================
+# اتصال هوش مصنوعی
+# =========================
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROQ_KEY = os.environ["GROQ_KEY"]
+
 
 client = Groq(
     api_key=GROQ_KEY
 )
 
 
-# -------------------------
-# چت
-# -------------------------
 
-async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# =========================
+# مغز گفتگو
+# =========================
 
-    user_id = str(update.message.from_user.id)
-    text = update.message.text
+async def chat(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
-    if user_id not in memory:
-        memory[user_id] = []
+    user_text = update.message.text
 
-    memory[user_id].append(
+
+    memory["conversation"].append(
         {
-            "role": "user",
-            "content": text
+            "user": user_text
         }
     )
 
-    memory[user_id] = memory[user_id][-20:]
+
+    # محدود کردن حافظه گفتگو
+    memory["conversation"] = (
+        memory["conversation"][-40:]
+    )
+
 
     save_memory()
 
 
+
     messages = [
+
         {
             "role": "system",
-            "content": SYSTEM_PROMPT
+            "content": SAEED_CORE
         }
+
     ]
 
-    messages.extend(
-        memory[user_id]
-    )
+
+    for item in memory["conversation"]:
+
+        messages.append(
+            {
+                "role": "user",
+                "content": item["user"]
+            }
+        )
+
 
 
     try:
-        response = client.chat.completions.create(
+
+        result = client.chat.completions.create(
+
             model="llama-3.1-8b-instant",
+
             messages=messages,
-            temperature=0.8
+
+            temperature=0.7
+
         )
 
 
-        answer = response.choices[0].message.content
+        answer = (
+            result
+            .choices[0]
+            .message
+            .content
+        )
 
 
-        memory[user_id].append(
+        memory["conversation"].append(
             {
-                "role": "assistant",
-                "content": answer
+                "assistant": answer
             }
         )
+
 
         save_memory()
 
@@ -161,18 +227,22 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
     except Exception as e:
+
         print(e)
 
         await update.message.reply_text(
-            "مشکل فنی پیش آمد."
+            "حسین، یک مشکل فنی پیش آمد."
         )
 
 
 
-# -------------------------
-# اجرای ربات
-# -------------------------
+
+# =========================
+# اجرای سعید
+# =========================
+
 
 app = Application.builder().token(
     TELEGRAM_TOKEN
@@ -187,7 +257,10 @@ app.add_handler(
 )
 
 
-print("Saeed AI is running...")
+
+print(
+    "Saeed Core v2 is running..."
+)
 
 
 app.run_polling()

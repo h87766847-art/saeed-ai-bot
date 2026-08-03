@@ -36,6 +36,9 @@ from reflection import create_reflection_prompt
 from core_router import route_message
 
 
+from knowledge_router import retrieve_knowledge
+
+
 
 
 
@@ -53,9 +56,8 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(
-            b"Saeed Core v11.3 alive"
+            b"Saeed Core v13.2 alive"
         )
-
 
 
 
@@ -79,7 +81,7 @@ Thread(
 
 
 # =========================
-# Initialize
+# Init
 # =========================
 
 
@@ -98,10 +100,10 @@ SYSTEM = """
 قوانین:
 
 - حسین را با نام حسین صدا کن.
-- دقیق و منطقی جواب بده.
-- اگر اطلاعاتی از حافظه وجود داشت استفاده کن.
-- قبل از پاسخ فکر کن.
-- جواب‌های با کیفیت ارائه بده.
+- پاسخ‌ها دقیق و کاربردی باشند.
+- از حافظه و دانش مرتبط استفاده کن.
+- اگر اطلاعات کافی نیست سوال بپرس.
+- قبل از پاسخ تحلیل کن.
 
 """
 
@@ -110,7 +112,6 @@ SYSTEM = """
 
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
-
 
 GROQ_KEY = os.environ["GROQ_KEY"]
 
@@ -125,8 +126,9 @@ client = Groq(
 
 
 
+
 # =========================
-# Main Chat
+# Chat
 # =========================
 
 
@@ -154,9 +156,9 @@ async def chat(
 
 
 
-    # =====================
-    # Core Router
-    # =====================
+    # ---------------------
+    # Router
+    # ---------------------
 
 
     route = route_message(
@@ -166,7 +168,6 @@ async def chat(
 
 
 
-    # ابزار
 
     if route["type"] == "tool":
 
@@ -191,7 +192,7 @@ async def chat(
 
 
 
-    # تصمیم گیری
+
 
     if route["type"] == "decision":
 
@@ -200,14 +201,12 @@ async def chat(
 
             model="llama-3.1-8b-instant",
 
-
             messages=[
 
                 {
                     "role":"system",
                     "content":SYSTEM
                 },
-
 
                 {
                     "role":"user",
@@ -223,10 +222,12 @@ async def chat(
 
 
         answer = (
+
             response
             .choices[0]
             .message
             .content
+
         )
 
 
@@ -250,15 +251,28 @@ async def chat(
 
 
 
-    # =====================
-    # Normal AI
-    # =====================
+    # ---------------------
+    # Knowledge Retrieval
+    # ---------------------
 
+
+    knowledge = retrieve_knowledge(
+        text
+    )
+
+
+
+
+
+    # ---------------------
+    # Planner
+    # ---------------------
 
 
     plan = planning_context(
         text
     )
+
 
 
 
@@ -274,6 +288,7 @@ async def chat(
 
             SYSTEM
 
+
             +
 
             "\n\nحافظه:\n"
@@ -281,6 +296,15 @@ async def chat(
             +
 
             build_memory_context()
+
+
+            +
+
+            "\n\nدانش مرتبط:\n"
+
+            +
+
+            knowledge
 
 
             +
@@ -297,8 +321,11 @@ async def chat(
 
 
 
+
     messages.extend(
+
         get_context_messages()
+
     )
 
 
@@ -332,6 +359,7 @@ async def chat(
             .content
 
         )
+
 
 
 
@@ -402,12 +430,12 @@ async def chat(
 
 
 
-
         await update.message.reply_text(
 
             final_answer
 
         )
+
 
 
 
@@ -421,7 +449,7 @@ async def chat(
 
         await update.message.reply_text(
 
-            "حسین، یک خطای فنی پیش آمد."
+            "حسین، خطای فنی رخ داد."
 
         )
 
@@ -433,7 +461,7 @@ async def chat(
 
 
 # =========================
-# Telegram
+# Telegram Start
 # =========================
 
 
@@ -465,7 +493,7 @@ app.add_handler(
 
 
 print(
-    "Saeed Core v11.3 running..."
+    "Saeed Core v13.2 running..."
 )
 
 

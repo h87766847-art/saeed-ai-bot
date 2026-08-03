@@ -1,0 +1,165 @@
+import sqlite3
+import datetime
+
+
+
+DATABASE = "saeed_memory.db"
+
+
+
+
+
+def connect():
+
+    return sqlite3.connect(
+        DATABASE
+    )
+
+
+
+
+
+
+def init_long_memory():
+
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+
+    cursor.execute("""
+
+    CREATE TABLE IF NOT EXISTS long_memory (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        category TEXT,
+
+        content TEXT,
+
+        importance INTEGER,
+
+        created TEXT,
+
+        last_used TEXT
+
+    )
+
+    """)
+
+
+
+    db.commit()
+
+    db.close()
+
+
+
+
+
+
+
+def save_long_memory(
+    category,
+    content,
+    importance=5
+):
+
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+
+    now = str(
+        datetime.datetime.now()
+    )
+
+
+
+    cursor.execute(
+
+        """
+
+        INSERT INTO long_memory
+
+        (
+        category,
+        content,
+        importance,
+        created,
+        last_used
+        )
+
+        VALUES (?,?,?,?,?)
+
+        """,
+
+        (
+
+            category,
+
+            content,
+
+            importance,
+
+            now,
+
+            now
+
+        )
+
+    )
+
+
+
+    db.commit()
+
+    db.close()
+
+
+
+
+
+
+
+def get_important_memories(limit=10):
+
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+
+    cursor.execute(
+
+        """
+
+        SELECT category,content
+
+        FROM long_memory
+
+        ORDER BY importance DESC
+
+        LIMIT ?
+
+        """,
+
+        (limit,)
+
+    )
+
+
+    data = cursor.fetchall()
+
+
+
+    db.close()
+
+
+
+    return data

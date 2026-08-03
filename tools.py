@@ -13,9 +13,18 @@ from habits import (
     show_habits
 )
 
+from knowledge_base import (
+    init_knowledge,
+    add_knowledge,
+    search_knowledge
+)
+
+
 
 init_goals()
 init_habits()
+init_knowledge()
+
 
 
 NOTES_FILE = "saeed_notes.txt"
@@ -42,9 +51,7 @@ def save_note(note):
         encoding="utf-8"
     ) as file:
 
-        file.write(
-            note + "\n"
-        )
+        file.write(note + "\n")
 
 
     return "یادداشت ذخیره شد."
@@ -69,58 +76,49 @@ def read_notes():
 
 
 
+
 # =====================
-# Goals
+# Knowledge
 # =====================
 
-def save_goal(goal):
+def save_knowledge(text):
 
-    return add_goal(goal)
-
-
-
-def show_goal_list():
-
-    goals = get_goals()
+    return add_knowledge(
+        "دانش حسین",
+        text
+    )
 
 
-    if not goals:
 
-        return "هدف ثبت نشده."
+def find_knowledge(query):
+
+    results = search_knowledge(
+        query
+    )
 
 
-    result = "هدف‌های حسین:\n"
+    if not results:
+
+        return "چیزی در دانش ذخیره نشده."
 
 
-    for title,status,progress in goals:
 
-        result += (
-            f"- {title} | "
-            f"{progress}%\n"
+    answer = "اطلاعات پیدا شده:\n"
+
+
+
+    for title, content in results:
+
+        answer += (
+            "\n"
+            +
+            content
         )
 
 
-    return result
+    return answer
 
 
-
-# =====================
-# Habits
-# =====================
-
-def save_habit(habit):
-
-    return add_habit(
-        habit
-    )
-
-
-
-def complete_task(task):
-
-    return complete_habit(
-        task
-    )
 
 
 
@@ -156,67 +154,32 @@ def use_tool(text):
 
 
 
-    if "هدفم" in text or "هدف من" in text:
 
-        goal = text.replace(
-            "هدفم",
-            ""
-        )
+    if "دانش ذخیره کن" in text:
 
-        goal = goal.replace(
-            "هدف من",
+        data = text.replace(
+            "دانش ذخیره کن",
             ""
         )
 
 
-        return save_goal(
-            goal.strip()
+        return save_knowledge(
+            data.strip()
         )
 
 
 
-    if "هدف ها" in text or "هدف‌ها" in text:
+    if "جستجو دانش" in text:
 
-        return show_goal_list()
-
-
-
-    if "ماموریت" in text or "کار امروز" in text:
-
-        habit = text.replace(
-            "ماموریت",
-            ""
-        )
-
-        habit = habit.replace(
-            "کار امروز",
+        query = text.replace(
+            "جستجو دانش",
             ""
         )
 
 
-        return save_habit(
-            habit.strip()
+        return find_knowledge(
+            query.strip()
         )
-
-
-
-    if "انجام شد" in text:
-
-        task = text.replace(
-            "انجام شد",
-            ""
-        )
-
-
-        return complete_task(
-            task.strip()
-        )
-
-
-
-    if "ماموریت ها" in text or "ماموریت‌ها" in text:
-
-        return show_habits()
 
 
 

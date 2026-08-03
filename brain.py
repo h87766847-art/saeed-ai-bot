@@ -7,22 +7,24 @@ from memory import (
 
 from smart_memory import smart_remember
 
+from preferences import detect_preferences
+
 
 
 # =========================
-# حافظه هوشمند
+# Smart Memory
 # =========================
 
 def remember_important_information(text):
 
-    return smart_remember(
-        text
-    )
+    smart_remember(text)
+
+    detect_preferences(text)
 
 
 
 # =========================
-# ساخت حافظه برای AI
+# Memory Context
 # =========================
 
 def build_memory_context():
@@ -38,7 +40,7 @@ def build_memory_context():
 
     if profile:
 
-        result += "\nپروفایل حسین:\n"
+        result += "\nترجیحات و اطلاعات حسین:\n"
 
 
         for key, value in profile:
@@ -69,7 +71,7 @@ def build_memory_context():
     if not result:
 
         result = (
-            "اطلاعات مهمی ذخیره نشده."
+            "حافظه خالی است."
         )
 
 
@@ -78,7 +80,7 @@ def build_memory_context():
 
 
 # =========================
-# گفتگو
+# Conversation
 # =========================
 
 def save_conversation(
@@ -106,13 +108,11 @@ def get_context_messages():
     for role, content in data:
 
         messages.append(
-
             {
                 "role": role,
                 "content": content
             }
-
         )
 
 
-    return messages
+    return messages        

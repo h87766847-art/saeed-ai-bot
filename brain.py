@@ -1,55 +1,23 @@
 from memory import (
-    save_memory,
     get_memories,
     save_message,
     get_recent_messages,
-    save_profile,
     get_profile
 )
+
+from smart_memory import smart_remember
 
 
 
 # =========================
-# تشخیص اطلاعات مهم
+# حافظه هوشمند
 # =========================
 
 def remember_important_information(text):
 
-    important_patterns = [
-
-        "اسم من",
-        "من حسین",
-        "علاقه دارم",
-        "دوست دارم",
-        "هدفم",
-        "میخوام",
-        "می‌خوام",
-        "می خواهم",
-        "کار من",
-        "پروژه من"
-
-    ]
-
-
-    for pattern in important_patterns:
-
-        if pattern in text:
-
-
-            save_memory(
-
-                "important",
-
-                text
-
-            )
-
-
-            return True
-
-
-
-    return False
+    return smart_remember(
+        text
+    )
 
 
 
@@ -58,7 +26,6 @@ def remember_important_information(text):
 # =========================
 
 def build_memory_context():
-
 
     memories = get_memories()
 
@@ -84,12 +51,10 @@ def build_memory_context():
 
     if memories:
 
-
         result += "\nخاطرات مهم:\n"
 
 
         for category, content in memories:
-
 
             result += (
                 "- "
@@ -100,10 +65,11 @@ def build_memory_context():
             )
 
 
+
     if not result:
 
         result = (
-            "هنوز اطلاعات مهمی ذخیره نشده."
+            "اطلاعات مهمی ذخیره نشده."
         )
 
 
@@ -112,7 +78,7 @@ def build_memory_context():
 
 
 # =========================
-# ذخیره گفتگو
+# گفتگو
 # =========================
 
 def save_conversation(
@@ -121,44 +87,32 @@ def save_conversation(
 ):
 
     save_message(
-
         role,
-
         text
-
     )
 
 
 
-# =========================
-# دریافت گفتگوهای اخیر
-# =========================
-
 def get_context_messages():
 
-
-    data = get_recent_messages()
+    data = get_recent_messages(
+        30
+    )
 
 
     messages = []
 
 
-
     for role, content in data:
-
 
         messages.append(
 
             {
-
                 "role": role,
-
                 "content": content
-
             }
 
         )
-
 
 
     return messages

@@ -8,6 +8,11 @@ from memory_manager import (
 )
 
 
+from memory_intelligence import (
+    analyze_memory
+)
+
+
 
 DATABASE = "saeed_memory.db"
 
@@ -64,17 +69,24 @@ def init_database():
 
 def save_conversation(role, content):
 
+
     db = connect()
 
     cursor = db.cursor()
 
 
+
     cursor.execute(
+
         """
 
         INSERT INTO conversations
 
-        (role,content,time)
+        (
+        role,
+        content,
+        time
+        )
 
         VALUES (?,?,?)
 
@@ -93,6 +105,7 @@ def save_conversation(role, content):
     )
 
 
+
     db.commit()
 
     db.close()
@@ -103,7 +116,7 @@ def save_conversation(role, content):
 
 
 
-def get_context_messages():
+def get_context_messages(limit=10):
 
 
     db = connect()
@@ -111,7 +124,9 @@ def get_context_messages():
     cursor = db.cursor()
 
 
+
     cursor.execute(
+
         """
 
         SELECT role,content
@@ -120,16 +135,21 @@ def get_context_messages():
 
         ORDER BY id DESC
 
-        LIMIT 10
+        LIMIT ?
 
-        """
+        """,
+
+        (limit,)
+
     )
+
 
 
     rows = cursor.fetchall()
 
 
     db.close()
+
 
 
     messages = []
@@ -142,9 +162,9 @@ def get_context_messages():
 
             {
 
-                "role":role,
+                "role": role,
 
-                "content":content
+                "content": content
 
             }
 
@@ -162,8 +182,22 @@ def get_context_messages():
 def remember_important_information(text):
 
 
+    # تحلیل حافظه بلندمدت
+
+    analyze_memory(
+        text
+    )
+
+
+
     lower = text.lower()
 
+
+
+
+
+
+    # اطلاعات کاربر
 
 
     if "من" in text:
@@ -178,6 +212,12 @@ def remember_important_information(text):
         )
 
 
+
+
+
+
+
+    # پروژه‌ها
 
 
     if "پروژه" in text:
@@ -195,7 +235,16 @@ def remember_important_information(text):
 
 
 
-    if "دوست دارم" in text or "علاقه" in text:
+
+
+    # علاقه‌ها
+
+
+    if (
+        "دوست دارم" in text
+        or
+        "علاقه" in text
+    ):
 
 
         add_memory(
@@ -208,6 +257,11 @@ def remember_important_information(text):
 
 
 
+
+
+
+
+    # هدف‌ها
 
 
     if "هدف" in text:
@@ -227,14 +281,14 @@ def remember_important_information(text):
 
 
 
-
-
 def build_memory_context():
+
 
 
     db = connect()
 
     cursor = db.cursor()
+
 
 
     cursor.execute(
@@ -254,7 +308,9 @@ def build_memory_context():
     )
 
 
+
     data = cursor.fetchall()
+
 
 
     db.close()
@@ -264,7 +320,9 @@ def build_memory_context():
     result = ""
 
 
+
     for role,content in reversed(data):
+
 
         result += (
 

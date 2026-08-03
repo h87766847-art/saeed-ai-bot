@@ -12,9 +12,7 @@ from telegram.ext import (
 
 from groq import Groq
 
-from memory import (
-    init_database
-)
+from memory import init_database
 
 from brain import (
     remember_important_information,
@@ -23,9 +21,12 @@ from brain import (
     get_context_messages
 )
 
+from planner import planning_context
+
+
 
 # =========================
-# Render Keep Alive
+# Render Health Server
 # =========================
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -36,7 +37,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(
-            b"Saeed Core v3.2 alive"
+            b"Saeed Core v4.5 alive"
         )
 
 
@@ -58,7 +59,7 @@ Thread(
 
 
 # =========================
-# ساخت حافظه
+# Database
 # =========================
 
 init_database()
@@ -66,14 +67,14 @@ init_database()
 
 
 # =========================
-# شخصیت سعید
+# Personality
 # =========================
 
-SYSTEM = """
+SAEED_SYSTEM = """
 
-تو سعید هستی.
+نام تو سعید است.
 
-دستیار هوش مصنوعی شخصی حسین.
+تو دستیار هوش مصنوعی شخصی حسین هستی.
 
 شخصیت:
 
@@ -84,34 +85,41 @@ SYSTEM = """
 
 وظیفه:
 
-کمک به حسین برای فکر کردن بهتر،
-یادگیری، ساختن و حل مسئله.
+کمک به حسین برای:
+- یادگیری
+- ساخت پروژه‌ها
+- تصمیم‌گیری بهتر
+- حل مسائل پیچیده
+
+روش فکر کردن:
 
 قبل از پاسخ:
-
-1. هدف حسین را بفهم.
+1. هدف حسین را تشخیص بده.
 2. اطلاعات حافظه را بررسی کن.
-3. بهترین پاسخ ممکن را بساز.
-4. پاسخ را از نظر کیفیت بررسی کن.
+3. راه‌حل مناسب پیدا کن.
+4. پاسخ واضح و کاربردی بده.
 
 قوانین:
 
 - اطلاعات جعلی نساز.
-- اگر مطمئن نیستی بگو.
+- اگر چیزی را نمی‌دانی بگو.
 - حسین را با نام حسین صدا کن.
-- بدون اجازه اقدام واقعی انجام نده.
+- بدون اجازه حسین هیچ اقدام واقعی انجام نده.
 
 """
 
 
-
 # =========================
-# اتصال مدل
+# AI Connection
 # =========================
 
-TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+TELEGRAM_TOKEN = os.environ.get(
+    "TELEGRAM_TOKEN"
+)
 
-GROQ_KEY = os.environ["GROQ_KEY"]
+GROQ_KEY = os.environ.get(
+    "GROQ_KEY"
+)
 
 
 client = Groq(
@@ -121,7 +129,7 @@ client = Groq(
 
 
 # =========================
-# گفتگو
+# Chat Handler
 # =========================
 
 async def chat(
@@ -139,8 +147,14 @@ async def chat(
     )
 
 
-    # بررسی ذخیره خاطره
+    # تشخیص اطلاعات مهم
     remember_important_information(
+        text
+    )
+
+
+    # برنامه هدف
+    plan = planning_context(
         text
     )
 
@@ -149,18 +163,21 @@ async def chat(
 
         {
             "role": "system",
+
             "content":
-            SYSTEM
-            +
-            "\n\n"
-            +
-            build_memory_context()
+                SAEED_SYSTEM
+                +
+                "\n\nحافظه حسین:\n"
+                +
+                build_memory_context()
+                +
+                "\n\nبرنامه:\n"
+                +
+                plan
         }
 
     ]
 
-
-    # اضافه کردن گفتگوهای اخیر
 
     messages.extend(
         get_context_messages()
@@ -172,11 +189,14 @@ async def chat(
 
         result = client.chat.completions.create(
 
-            model="llama-3.1-8b-instant",
+            model=
+            "llama-3.1-8b-instant",
 
-            messages=messages,
+            messages=
+            messages,
 
-            temperature=0.7
+            temperature=
+            0.7
 
         )
 
@@ -201,9 +221,11 @@ async def chat(
 
 
 
-    except Exception as e:
+    except Exception as error:
 
-        print(e)
+        print(
+            error
+        )
 
         await update.message.reply_text(
             "حسین، یک مشکل فنی پیش آمد."
@@ -212,7 +234,7 @@ async def chat(
 
 
 # =========================
-# اجرا
+# Telegram Start
 # =========================
 
 app = Application.builder().token(
@@ -220,17 +242,27 @@ app = Application.builder().token(
 ).build()
 
 
+
 app.add_handler(
+
     MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
+
+        filters.TEXT
+        &
+        ~filters.COMMAND,
+
         chat
+
     )
+
 )
+
 
 
 print(
-    "Saeed Core v3.2 running..."
+    "Saeed Core v4.5 running..."
 )
+
 
 
 app.run_polling()

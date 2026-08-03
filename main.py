@@ -1,4 +1,5 @@
 import os
+
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -16,7 +17,10 @@ from telegram.ext import (
 from groq import Groq
 
 
-from memory import init_database
+
+from memory import (
+    init_database
+)
 
 
 from brain import (
@@ -27,23 +31,37 @@ from brain import (
 )
 
 
-from planner import planning_context
+from planner import (
+    planning_context
+)
 
 
-from reflection import create_reflection_prompt
+from reflection import (
+    create_reflection_prompt
+)
 
 
-from core_router import route_message
+from core_router import (
+    route_message
+)
 
 
-from knowledge_router import retrieve_knowledge
+from knowledge_router import (
+    retrieve_knowledge
+)
+
+
+from personality_core import (
+    init_personality,
+    get_personality
+)
 
 
 
 
 
 # =========================
-# Health Server
+# Server
 # =========================
 
 
@@ -56,8 +74,9 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         self.wfile.write(
-            b"Saeed Core v13.2 alive"
+            b"Saeed Core v14.1 alive"
         )
+
 
 
 
@@ -81,29 +100,51 @@ Thread(
 
 
 # =========================
-# Init
+# Initialize
 # =========================
 
 
 init_database()
 
+init_personality()
 
 
 
 
-SYSTEM = """
 
-تو سعید هستی.
+# =========================
+# Personality
+# =========================
 
-دستیار هوش مصنوعی شخصی حسین.
+
+personality = get_personality()
+
+
+
+SYSTEM = f"""
+
+تو {personality["name"]} هستی.
+
+دستیار هوش مصنوعی شخصی {personality["user"]}.
+
+سبک رفتاری:
+
+{personality["style"]}
+
+
 
 قوانین:
 
-- حسین را با نام حسین صدا کن.
-- پاسخ‌ها دقیق و کاربردی باشند.
-- از حافظه و دانش مرتبط استفاده کن.
-- اگر اطلاعات کافی نیست سوال بپرس.
-- قبل از پاسخ تحلیل کن.
+{chr(10).join(personality["behavior_rules"])}
+
+
+
+همیشه:
+
+- پاسخ دقیق بده.
+- اگر چیزی را نمی‌دانی حدس قطعی نزن.
+- اطلاعات مرتبط از حافظه استفاده کن.
+- به حسین کمک کاربردی بده.
 
 """
 
@@ -111,7 +152,15 @@ SYSTEM = """
 
 
 
+
+
+# =========================
+# API
+# =========================
+
+
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+
 
 GROQ_KEY = os.environ["GROQ_KEY"]
 
@@ -156,9 +205,8 @@ async def chat(
 
 
 
-    # ---------------------
+
     # Router
-    # ---------------------
 
 
     route = route_message(
@@ -251,9 +299,7 @@ async def chat(
 
 
 
-    # ---------------------
-    # Knowledge Retrieval
-    # ---------------------
+    # Knowledge
 
 
     knowledge = retrieve_knowledge(
@@ -263,10 +309,7 @@ async def chat(
 
 
 
-
-    # ---------------------
     # Planner
-    # ---------------------
 
 
     plan = planning_context(
@@ -278,7 +321,6 @@ async def chat(
 
 
     messages = [
-
 
         {
 
@@ -298,6 +340,7 @@ async def chat(
             build_memory_context()
 
 
+
             +
 
             "\n\nدانش مرتبط:\n"
@@ -305,6 +348,7 @@ async def chat(
             +
 
             knowledge
+
 
 
             +
@@ -318,6 +362,7 @@ async def chat(
         }
 
     ]
+
 
 
 
@@ -336,6 +381,7 @@ async def chat(
     try:
 
 
+
         response = client.chat.completions.create(
 
 
@@ -351,7 +397,8 @@ async def chat(
 
 
 
-        first_answer = (
+
+        draft = (
 
             response
             .choices[0]
@@ -364,17 +411,17 @@ async def chat(
 
 
 
-
         # Reflection
 
 
-        review_prompt = create_reflection_prompt(
+        reflection = create_reflection_prompt(
 
-            first_answer,
+            draft,
 
             text
 
         )
+
 
 
 
@@ -391,7 +438,7 @@ async def chat(
 
                     "role":"user",
 
-                    "content":review_prompt
+                    "content":reflection
 
                 }
 
@@ -406,7 +453,7 @@ async def chat(
 
 
 
-        final_answer = (
+        answer = (
 
             review
             .choices[0]
@@ -419,20 +466,22 @@ async def chat(
 
 
 
+
         save_conversation(
 
             "assistant",
 
-            final_answer
+            answer
 
         )
 
 
 
 
+
         await update.message.reply_text(
 
-            final_answer
+            answer
 
         )
 
@@ -447,9 +496,10 @@ async def chat(
         print(e)
 
 
+
         await update.message.reply_text(
 
-            "حسین، خطای فنی رخ داد."
+            "حسین، یک خطای فنی پیش آمد."
 
         )
 
@@ -461,7 +511,7 @@ async def chat(
 
 
 # =========================
-# Telegram Start
+# Telegram
 # =========================
 
 
@@ -493,7 +543,7 @@ app.add_handler(
 
 
 print(
-    "Saeed Core v13.2 running..."
+    "Saeed Core v14.1 running..."
 )
 
 

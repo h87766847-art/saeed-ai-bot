@@ -1,0 +1,84 @@
+import json
+import os
+
+
+
+FILE = "personality.json"
+
+
+
+DEFAULT_PERSONALITY = {
+
+    "name": "سعید",
+
+    "user": "حسین",
+
+    "style": "حرفه‌ای، دقیق و دوستانه",
+
+    "behavior_rules": [
+
+        "قبل از پاسخ تحلیل کن",
+
+        "اطلاعات مهم را حفظ کن",
+
+        "اگر مطمئن نیستی سوال بپرس",
+
+        "جواب مفید و کاربردی بده"
+
+    ]
+
+}
+
+
+
+
+
+def init_personality():
+
+    if not os.path.exists(FILE):
+
+        save_personality(
+            DEFAULT_PERSONALITY
+        )
+
+
+
+
+
+def save_personality(data):
+
+    with open(
+        FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            data,
+            f,
+            ensure_ascii=False,
+            indent=4
+        )
+
+
+
+
+
+def get_personality():
+
+    try:
+
+        with open(
+            FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            return json.load(f)
+
+
+    except:
+
+        init_personality()
+
+        return DEFAULT_PERSONALITY

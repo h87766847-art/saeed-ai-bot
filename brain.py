@@ -2,57 +2,118 @@ from memory import (
     save_memory,
     get_memories,
     save_message,
-    get_recent_messages
+    get_recent_messages,
+    save_profile,
+    get_profile
 )
 
 
+
+# =========================
+# تشخیص اطلاعات مهم
+# =========================
+
 def remember_important_information(text):
 
-    keywords = [
+    important_patterns = [
+
         "اسم من",
-        "من هستم",
+        "من حسین",
         "علاقه دارم",
         "دوست دارم",
         "هدفم",
-        "می‌خواهم",
-        "میخوام"
+        "میخوام",
+        "می‌خوام",
+        "می خواهم",
+        "کار من",
+        "پروژه من"
+
     ]
 
-    for key in keywords:
 
-        if key in text:
+    for pattern in important_patterns:
+
+        if pattern in text:
+
 
             save_memory(
+
                 "important",
+
                 text
+
             )
 
+
             return True
+
+
 
     return False
 
 
 
+# =========================
+# ساخت حافظه برای AI
+# =========================
+
 def build_memory_context():
+
 
     memories = get_memories()
 
-    if not memories:
-        return "اطلاعات مهمی ذخیره نشده."
+    profile = get_profile()
 
-    result = "اطلاعات مهم درباره حسین:\n"
 
-    for item in memories:
+    result = ""
 
-        result += (
-            "- "
-            + item[1]
-            + "\n"
+
+
+    if profile:
+
+        result += "\nپروفایل حسین:\n"
+
+
+        for key, value in profile:
+
+            result += (
+                f"{key}: {value}\n"
+            )
+
+
+
+    if memories:
+
+
+        result += "\nخاطرات مهم:\n"
+
+
+        for category, content in memories:
+
+
+            result += (
+                "- "
+                +
+                content
+                +
+                "\n"
+            )
+
+
+    if not result:
+
+        result = (
+            "هنوز اطلاعات مهمی ذخیره نشده."
         )
+
 
     return result
 
 
+
+# =========================
+# ذخیره گفتگو
+# =========================
 
 def save_conversation(
     role,
@@ -60,25 +121,44 @@ def save_conversation(
 ):
 
     save_message(
+
         role,
+
         text
+
     )
 
 
 
+# =========================
+# دریافت گفتگوهای اخیر
+# =========================
+
 def get_context_messages():
+
 
     data = get_recent_messages()
 
+
     messages = []
+
+
 
     for role, content in data:
 
+
         messages.append(
+
             {
+
                 "role": role,
+
                 "content": content
+
             }
+
         )
+
+
 
     return messages

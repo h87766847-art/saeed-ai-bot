@@ -1,49 +1,87 @@
 from tool_router import check_tools
+
 from decision_router import check_decision
+
+from goal_router import check_goal_request
+
+
 
 
 
 def route_message(text):
 
 
-    # بررسی ابزارها
+    # ابزارها
 
-    tool = check_tools(text)
+    tool = check_tools(
+        text
+    )
 
 
     if tool["used"]:
 
         return {
 
-            "type": "tool",
+            "type":"tool",
 
-            "data": tool["result"]
+            "data":tool["result"]
 
         }
 
 
 
-    # بررسی تصمیم
 
-    decision = check_decision(text)
+
+    # تصمیم گیری
+
+    decision = check_decision(
+        text
+    )
 
 
     if decision["used"]:
 
         return {
 
-            "type": "decision",
+            "type":"decision",
 
-            "data": decision["prompt"]
+            "data":decision["prompt"]
 
         }
 
 
 
+
+
+
+    # هدف و برنامه
+
+    goal = check_goal_request(
+        text
+    )
+
+
+    if goal["used"]:
+
+        return {
+
+            "type":"goal",
+
+            "data":goal["data"]
+
+        }
+
+
+
+
+
+
+    # چت معمولی
+
     return {
 
-        "type": "chat",
+        "type":"chat",
 
-        "data": None
+        "data":None
 
     }

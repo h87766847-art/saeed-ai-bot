@@ -1,5 +1,7 @@
 import os
 import json
+from threading import Thread
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from telegram import Update
 from telegram.ext import (
@@ -12,61 +14,71 @@ from telegram.ext import (
 from groq import Groq
 
 
-# =========================
+# -------------------------
+# پورت برای Render
+# -------------------------
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Saeed is alive")
+
+
+def run_server():
+    server = HTTPServer(
+        ("0.0.0.0", 10000),
+        HealthHandler
+    )
+    server.serve_forever()
+
+
+Thread(target=run_server).start()
+
+
+# -------------------------
 # شخصیت سعید
-# =========================
+# -------------------------
 
 SYSTEM_PROMPT = """
-تو سعید هستی؛ یک دستیار هوش مصنوعی پیشرفته فارسی.
+تو سعید هستی؛ یک دستیار هوش مصنوعی فارسی پیشرفته.
 
 ویژگی‌ها:
-- باهوش، دقیق، خلاق و آرام باش.
+- باهوش، دقیق، خلاق و دوستانه باش.
 - مثل یک همراه فکری حرفه‌ای صحبت کن.
-- جواب‌ها را طبیعی و انسانی بده.
+- جواب‌های واضح و کاربردی بده.
 - اگر چیزی را نمی‌دانی، صادقانه بگو.
-- اطلاعات جعلی تولید نکن.
+- اطلاعات جعلی نساز.
 
-ماموریت:
-کمک به کاربر برای یادگیری، ساختن، حل مشکلات و رشد.
+هدف:
+کمک به کاربر برای یادگیری، ساختن و حل مشکلات.
 
 قوانین:
-- بدون اجازه کاربر اقدامی انجام نده.
-- همیشه تحت کنترل سازنده و کاربر خودت هستی.
+- بدون اجازه کاربر کاری انجام نده.
+- همیشه تحت کنترل کاربر و سازنده هستی.
 - امنیت و اعتماد مهم است.
-
-حافظه:
-اگر اطلاعاتی از کاربر در حافظه وجود داشت، از آن برای بهتر کردن پاسخ استفاده کن.
 """
 
 
-# =========================
-# حافظه بلندمدت
-# =========================
+# -------------------------
+# حافظه
+# -------------------------
 
 MEMORY_FILE = "memory.json"
 
 
 def load_memory():
     if os.path.exists(MEMORY_FILE):
-        with open(
-            MEMORY_FILE,
-            "r",
-            encoding="utf-8"
-        ) as file:
-            return json.load(file)
-
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
     return {}
 
 
 def save_memory():
-    with open(
-        MEMORY_FILE,
-        "w",
-        encoding="utf-8"
-    ) as file:
+    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
         json.dump(
             memory,
-            file,
+            f,
             ensure_ascii=False,
             indent=2
         )
@@ -75,9 +87,9 @@ def save_memory():
 memory = load_memory()
 
 
-# =========================
-# اتصال هوش مصنوعی
-# =========================
+# -------------------------
+# اتصال‌ها
+# -------------------------
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 GROQ_KEY = os.environ["GROQ_KEY"]
@@ -87,38 +99,26 @@ client = Groq(
 )
 
 
-# =========================
-# پردازش پیام
-# =========================
+# -------------------------
+# چت
+# -------------------------
 
-async def chat(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    user_id = str(
-        update.message.from_user.id
-    )
-
-    message = update.message.text
-
+    user_id = str(update.message.from_user.id)
+    text = update.message.text
 
     if user_id not in memory:
         memory[user_id] = []
 
-
-    # ذخیره گفتگو
     memory[user_id].append(
         {
             "role": "user",
-            "content": message
+            "content": text
         }
     )
 
-
-    # فقط 30 پیام آخر
-    memory[user_id] = memory[user_id][-30:]
-
+    memory[user_id] = memory[user_id][-20:]
 
     save_memory()
 
@@ -130,31 +130,20 @@ async def chat(
         }
     ]
 
-
-    # اضافه کردن حافظه
     messages.extend(
         memory[user_id]
     )
 
 
     try:
-
-        result = client.chat.completions.create(
-
+        response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
-
             messages=messages,
-
             temperature=0.8
         )
 
 
-        answer = (
-            result
-            .choices[0]
-            .message
-            .content
-        )
+        answer = response.choices[0].message.content
 
 
         memory[user_id].append(
@@ -163,7 +152,6 @@ async def chat(
                 "content": answer
             }
         )
-
 
         save_memory()
 
@@ -174,18 +162,17 @@ async def chat(
 
 
     except Exception as e:
-
         print(e)
 
         await update.message.reply_text(
-            "یک مشکل فنی پیش آمد."
+            "مشکل فنی پیش آمد."
         )
 
 
 
-# =========================
+# -------------------------
 # اجرای ربات
-# =========================
+# -------------------------
 
 app = Application.builder().token(
     TELEGRAM_TOKEN
@@ -200,9 +187,7 @@ app.add_handler(
 )
 
 
-print(
-    "Saeed AI with Memory is running..."
-)
+print("Saeed AI is running...")
 
 
 app.run_polling()

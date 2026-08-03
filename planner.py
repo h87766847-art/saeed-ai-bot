@@ -1,27 +1,38 @@
+# =========================
+# Saeed Planner
+# =========================
+
+
 def analyze_goal(text):
 
-    goals = [
+    goal_words = [
+
         "میخوام",
-        "می‌خواهم",
+        "می‌خوام",
+        "می خواهم",
         "هدفم",
+        "شروع کنم",
         "بسازم",
         "یاد بگیرم",
-        "شروع کنم"
+        "برنامه",
+        "کمک کن"
+
     ]
 
-    for goal in goals:
 
-        if goal in text:
+    for word in goal_words:
+
+        if word in text:
 
             return {
-                "has_goal": True,
-                "goal": text
+                "goal": True,
+                "text": text
             }
 
 
     return {
-        "has_goal": False,
-        "goal": None
+        "goal": False,
+        "text": ""
     }
 
 
@@ -29,23 +40,33 @@ def analyze_goal(text):
 def create_plan(goal):
 
     return f"""
-هدف شناسایی شد:
+
+هدف شناسایی شده:
 
 {goal}
 
-برنامه پیشنهادی:
+
+روش پیشنهادی:
 
 مرحله ۱:
-درک دقیق هدف و نیازها
+مشخص کردن نتیجه نهایی
+
 
 مرحله ۲:
 تقسیم هدف به کارهای کوچک‌تر
 
+
 مرحله ۳:
-شروع با ساده‌ترین قدم عملی
+شروع با اولین قدم عملی
+
 
 مرحله ۴:
-بررسی نتیجه و بهبود
+بررسی نتیجه و اصلاح مسیر
+
+
+مرحله ۵:
+بهبود تدریجی
+
 
 """
 
@@ -53,13 +74,14 @@ def create_plan(goal):
 
 def planning_context(text):
 
+
     result = analyze_goal(text)
 
 
-    if result["has_goal"]:
+    if result["goal"]:
 
         return create_plan(
-            result["goal"]
+            result["text"]
         )
 
 

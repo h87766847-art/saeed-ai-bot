@@ -2,7 +2,9 @@ import os
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+
 from telegram import Update
+
 from telegram.ext import (
     Application,
     MessageHandler,
@@ -10,9 +12,12 @@ from telegram.ext import (
     filters
 )
 
+
 from groq import Groq
 
+
 from memory import init_database
+
 
 from brain import (
     remember_important_information,
@@ -21,28 +26,37 @@ from brain import (
     get_context_messages
 )
 
+
 from planner import planning_context
+
 
 from reflection import create_reflection_prompt
 
-from tool_router import check_tools
+
+from core_router import route_message
+
+
 
 
 
 # =========================
-# Render
+# Health Server
 # =========================
+
 
 class HealthHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
 
         self.send_response(200)
+
         self.end_headers()
 
         self.wfile.write(
-            b"Saeed Core v6.2 alive"
+            b"Saeed Core v11.3 alive"
         )
+
+
 
 
 def run_server():
@@ -62,7 +76,16 @@ Thread(
 
 
 
+
+
+# =========================
+# Initialize
+# =========================
+
+
 init_database()
+
+
 
 
 
@@ -72,27 +95,25 @@ SYSTEM = """
 
 دستیار هوش مصنوعی شخصی حسین.
 
-ویژگی‌ها:
+قوانین:
 
-- دقیق
-- منطقی
-- خلاق
-- کمک‌کننده
-
-قبل از جواب:
-حافظه را بررسی کن.
-هدف را بفهم.
-بهترین راه را انتخاب کن.
-
-حسین را با نام حسین صدا کن.
+- حسین را با نام حسین صدا کن.
+- دقیق و منطقی جواب بده.
+- اگر اطلاعاتی از حافظه وجود داشت استفاده کن.
+- قبل از پاسخ فکر کن.
+- جواب‌های با کیفیت ارائه بده.
 
 """
 
 
 
+
+
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 
+
 GROQ_KEY = os.environ["GROQ_KEY"]
+
 
 
 client = Groq(
@@ -102,9 +123,21 @@ client = Groq(
 
 
 
-async def chat(update, context):
+
+
+# =========================
+# Main Chat
+# =========================
+
+
+async def chat(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
 
     text = update.message.text
+
 
 
     save_conversation(
@@ -113,21 +146,33 @@ async def chat(update, context):
     )
 
 
+
     remember_important_information(
         text
     )
 
 
-    # بررسی ابزار
 
-    tool = check_tools(
+
+    # =====================
+    # Core Router
+    # =====================
+
+
+    route = route_message(
         text
     )
 
 
-    if tool["used"]:
 
-        answer = tool["result"]
+
+    # ابزار
+
+    if route["type"] == "tool":
+
+
+        answer = route["data"]
+
 
         save_conversation(
             "assistant",
@@ -139,53 +184,42 @@ async def chat(update, context):
             answer
         )
 
+
         return
 
 
 
-    plan = planning_context(
-        text
-    )
 
 
+    # تصمیم گیری
 
-    messages = [
+    if route["type"] == "decision":
 
-        {
-            "role":"system",
-
-            "content":
-            SYSTEM
-            +
-            "\n\nحافظه:\n"
-            +
-            build_memory_context()
-            +
-            "\n\nبرنامه:\n"
-            +
-            plan
-        }
-
-    ]
-
-
-    messages.extend(
-        get_context_messages()
-    )
-
-
-
-    try:
 
         response = client.chat.completions.create(
 
             model="llama-3.1-8b-instant",
 
-            messages=messages,
 
-            temperature=0.7
+            messages=[
+
+                {
+                    "role":"system",
+                    "content":SYSTEM
+                },
+
+
+                {
+                    "role":"user",
+                    "content":route["data"]
+                }
+
+            ],
+
+            temperature=0.5
 
         )
+
 
 
         answer = (
@@ -196,77 +230,245 @@ async def chat(update, context):
         )
 
 
-        review_prompt = create_reflection_prompt(
-            answer,
-            text
+
+        save_conversation(
+            "assistant",
+            answer
         )
+
+
+        await update.message.reply_text(
+            answer
+        )
+
+
+        return
+
+
+
+
+
+
+
+    # =====================
+    # Normal AI
+    # =====================
+
+
+
+    plan = planning_context(
+        text
+    )
+
+
+
+
+    messages = [
+
+
+        {
+
+            "role":"system",
+
+            "content":
+
+            SYSTEM
+
+            +
+
+            "\n\nحافظه:\n"
+
+            +
+
+            build_memory_context()
+
+
+            +
+
+            "\n\nبرنامه:\n"
+
+            +
+
+            plan
+
+        }
+
+    ]
+
+
+
+    messages.extend(
+        get_context_messages()
+    )
+
+
+
+
+
+
+    try:
+
+
+        response = client.chat.completions.create(
+
+
+            model="llama-3.1-8b-instant",
+
+
+            messages=messages,
+
+
+            temperature=0.7
+
+        )
+
+
+
+        first_answer = (
+
+            response
+            .choices[0]
+            .message
+            .content
+
+        )
+
+
+
+
+
+        # Reflection
+
+
+        review_prompt = create_reflection_prompt(
+
+            first_answer,
+
+            text
+
+        )
+
+
 
 
         review = client.chat.completions.create(
 
+
             model="llama-3.1-8b-instant",
 
+
             messages=[
+
                 {
+
                     "role":"user",
+
                     "content":review_prompt
+
                 }
+
             ],
+
 
             temperature=0.3
 
         )
 
 
+
+
+
         final_answer = (
+
             review
             .choices[0]
             .message
             .content
+
         )
+
+
+
 
 
         save_conversation(
+
             "assistant",
+
             final_answer
+
         )
+
+
+
 
 
         await update.message.reply_text(
+
             final_answer
+
         )
+
+
 
 
 
     except Exception as e:
 
+
         print(e)
 
+
         await update.message.reply_text(
-            "حسین، مشکل فنی پیش آمد."
+
+            "حسین، یک خطای فنی پیش آمد."
+
         )
 
 
 
 
 
+
+
+
+# =========================
+# Telegram
+# =========================
+
+
+
 app = Application.builder().token(
+
     TELEGRAM_TOKEN
+
 ).build()
 
 
+
+
+
 app.add_handler(
+
     MessageHandler(
+
         filters.TEXT & ~filters.COMMAND,
+
         chat
+
     )
+
 )
+
+
 
 
 
 print(
-    "Saeed Core v6.2 running..."
+    "Saeed Core v11.3 running..."
 )
+
+
 
 
 

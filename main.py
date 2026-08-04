@@ -1,13 +1,17 @@
 # main.py
-# Saeed Core v6.3
-# Telegram AI Assistant Main
+# Saeed Core
+# Advanced Telegram Interface
 
 
 import os
 import logging
+import traceback
+
 
 
 from telegram import Update
+
+
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -17,10 +21,10 @@ from telegram.ext import (
 )
 
 
+
 from brain import (
     process_brain,
-    save_conversation,
-    init_database
+    save_conversation
 )
 
 
@@ -30,95 +34,253 @@ from core_router import (
 
 
 
-# تنظیمات لاگ
+
+
+# -------------------------
+# Logging
+# -------------------------
+
+
 logging.basicConfig(
+
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+
     level=logging.INFO
+
+)
+
+
+logger = logging.getLogger(
+    "Saeed"
 )
 
 
 
-# توکن ربات
+
+
+
+# -------------------------
+# Config
+# -------------------------
+
+
 TOKEN = os.getenv(
     "BOT_TOKEN"
 )
 
 
 
-# شروع دیتابیس
-init_database()
 
 
 
+
+# -------------------------
+# Commands
+# -------------------------
 
 
 async def start(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE
 ):
 
+
     await update.message.reply_text(
+
         "سلام 👋\n"
-        "Saeed AI Core فعال شد."
+        "سعید فعال شد.\n"
+        "هسته هوشمند آماده دریافت پیام است."
+
     )
 
 
 
 
 
-async def handle_message(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
+
+
+async def status(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE
 ):
 
-    user_text = update.message.text
+
+    await update.message.reply_text(
+
+        "🧠 Saeed Core Online\n"
+        "Memory: Active\n"
+        "Brain: Active\n"
+        "Router: Active"
+
+    )
+
+
+
+
+
+
+
+
+
+# -------------------------
+# Message Processor
+# -------------------------
+
+
+async def handle_message(
+
+        update: Update,
+
+        context: ContextTypes.DEFAULT_TYPE
+
+):
 
 
     try:
 
-        # عبور از روتر هوشمند
-        result = analyze_request(
+
+        user_text = update.message.text
+
+
+
+        if not user_text:
+
+            return
+
+
+
+
+
+
+        # Router
+
+        route = analyze_request(
+
             user_text
+
         )
 
 
-        # پردازش مغز
-        brain_result = process_brain(
+
+
+
+
+        # Brain
+
+        result = process_brain(
+
             user_text,
-            result
+
+            context=route
+
         )
 
 
-        response = str(
-            brain_result
+
+
+
+
+        response = result.get(
+
+            "response",
+
+            "پیام پردازش شد."
+
         )
+
+
+
+
+
 
 
         save_conversation(
+
             user_text,
+
             response
+
         )
+
+
+
+
+
 
 
         await update.message.reply_text(
-            response[:4000]
+
+            response
+
         )
+
+
+
+
 
 
 
     except Exception as e:
 
 
-        logging.error(e)
+        logger.error(
+
+            str(e)
+
+        )
+
+
+        traceback.print_exc()
+
 
 
         await update.message.reply_text(
-            "خطا در پردازش پیام ❌"
+
+            "خطایی در پردازش رخ داد."
+
         )
 
 
 
 
 
+
+
+
+
+# -------------------------
+# Error Handler
+# -------------------------
+
+
+async def error_handler(
+
+        update,
+
+        context
+
+):
+
+
+    logger.error(
+
+        "Telegram Error",
+
+        exc_info=context.error
+
+    )
+
+
+
+
+
+
+
+
+
+# -------------------------
+# Run
+# -------------------------
 
 
 def main():
@@ -126,45 +288,106 @@ def main():
 
     if not TOKEN:
 
+
         print(
-            "BOT_TOKEN پیدا نشد"
+
+            "BOT_TOKEN تنظیم نشده"
+
         )
 
         return
 
 
 
+
+
+
     app = Application.builder().token(
+
         TOKEN
+
     ).build()
 
 
 
+
+
+
     app.add_handler(
+
         CommandHandler(
+
             "start",
+
             start
+
         )
+
     )
+
+
 
 
 
     app.add_handler(
-        MessageHandler(
-            filters.TEXT & ~filters.COMMAND,
-            handle_message
+
+        CommandHandler(
+
+            "status",
+
+            status
+
         )
+
     )
+
+
+
+
+
+    app.add_handler(
+
+        MessageHandler(
+
+            filters.TEXT & ~filters.COMMAND,
+
+            handle_message
+
+        )
+
+    )
+
+
+
+
+
+
+    app.add_error_handler(
+
+        error_handler
+
+    )
+
+
+
 
 
 
     print(
-        "Saeed AI Bot Started..."
+
+        "Saeed Core Started..."
+
     )
 
 
 
+
+
+
     app.run_polling()
+
+
+
 
 
 

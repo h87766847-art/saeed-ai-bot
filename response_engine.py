@@ -1,3 +1,8 @@
+# response_engine.py
+# Saeed AI v2.5
+# Memory Connected Response System
+
+
 from brain import (
     build_memory_context,
     get_context_messages
@@ -9,40 +14,47 @@ from context_intelligence import (
 )
 
 
-
-
-
-def search_memory(user_text, memory):
-
-
-    keywords = user_text.split()
-
-
-
-    found = []
-
-
-
-    for word in keywords:
-
-
-        if word in memory:
-
-
-            found.append(word)
+from memory_manager import (
+    get_best_memory
+)
 
 
 
 
 
-    if found:
+def build_memory_prompt(user_text):
 
 
-        return "اطلاعات مرتبط پیدا شد: " + ", ".join(found)
+    memory = get_best_memory(
+
+        user_text
+
+    )
 
 
 
-    return "اطلاعات مرتبط قبلی پیدا نشد"
+    if memory:
+
+
+        return (
+
+            "خاطره مرتبط:\n"
+
+            +
+
+            memory.get(
+
+                "content",
+
+                ""
+
+            )
+
+        )
+
+
+
+    return "خاطره مرتبطی پیدا نشد."
 
 
 
@@ -54,33 +66,29 @@ def search_memory(user_text, memory):
 def generate_response(user_text):
 
 
-    # دریافت حافظه
+    # حافظه قدیمی گفتگو
 
-    memory = build_memory_context()
+    memory_context = build_memory_context()
 
 
 
-    # دریافت زمینه گفتگو
+    # زمینه فعلی
 
     context = get_context_information()
 
 
 
-    # دریافت پیام‌های قبلی
+    # پیام‌های قبلی
 
     messages = get_context_messages()
 
 
 
+    # حافظه هوشمند
 
+    smart_memory = build_memory_prompt(
 
-    # جستجو در حافظه
-
-    memory_result = search_memory(
-
-        user_text,
-
-        memory
+        user_text
 
     )
 
@@ -92,9 +100,9 @@ def generate_response(user_text):
 
     response = (
 
-        "🧠 سعید AI v2.1\n\n"
+        "🧠 سعید AI v2.5\n\n"
 
-        "پیام جدید:\n"
+        "پیام تو:\n"
 
         +
 
@@ -104,29 +112,27 @@ def generate_response(user_text):
 
         "\n\n"
 
-        "📚 بررسی حافظه:\n"
+        "📌 حافظه مرتبط:\n"
 
         +
 
-        memory_result
+        smart_memory
 
         +
 
         "\n\n"
 
-        "🗂 سابقه گفتگو:\n"
+        "📚 تاریخچه گفتگو:\n"
 
         +
 
-        memory
+        str(memory_context)
 
         +
 
-        "\n"
+        "\n\n"
 
-        +
-
-        "\n🔎 زمینه فعلی:\n"
+        "🔎 وضعیت فعلی:\n"
 
         +
 

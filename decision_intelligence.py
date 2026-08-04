@@ -1,9 +1,15 @@
 # decision_intelligence.py
-# Saeed Core v6.6
-# Decision Intelligence System
+# Saeed Core
+# Advanced Decision Intelligence System
 
 
-DECISION_TYPES = {
+import datetime
+
+
+
+
+
+DECISION_PATTERNS = {
 
 
     "question": [
@@ -12,41 +18,58 @@ DECISION_TYPES = {
         "چرا",
         "چطور",
         "چگونه",
-        "آیا"
+        "آیا",
+        "؟"
 
     ],
 
 
-    "request": [
+
+    "command": [
+
+        "برو",
+        "اجرا کن",
+        "فعال کن",
+        "شروع کن"
+
+    ],
+
+
+
+    "creation": [
 
         "بساز",
-        "انجام بده",
-        "کمک کن",
-        "ایجاد کن"
+        "ایجاد کن",
+        "طراحی کن",
+        "درست کن"
 
     ],
+
 
 
     "memory": [
 
         "یادته",
-        "به یاد داشته باش",
         "ذخیره کن",
-        "یادت بمونه"
+        "فراموش نکن",
+        "به یاد داشته باش"
 
     ],
 
 
-    "command": [
 
-        "شروع",
-        "برو",
-        "اجرا",
-        "فعال کن"
+    "analysis": [
+
+        "بررسی کن",
+        "تحلیل کن",
+        "مقایسه کن",
+        "نظر بده"
 
     ]
 
 }
+
+
 
 
 
@@ -64,17 +87,17 @@ def analyze_decision(text):
 
 
 
-    for decision, words in DECISION_TYPES.items():
+    for decision, patterns in DECISION_PATTERNS.items():
 
 
         score = 0
 
 
 
-        for word in words:
+        for pattern in patterns:
 
 
-            if word in text:
+            if pattern in text:
 
                 score += 1
 
@@ -86,17 +109,29 @@ def analyze_decision(text):
 
 
 
-    best = max(
+    selected = max(
+
         scores,
+
         key=scores.get
+
     )
 
 
 
 
-    if scores[best] == 0:
 
-        best = "conversation"
+    confidence = scores[selected]
+
+
+
+
+
+    if confidence == 0:
+
+
+        selected = "conversation"
+
 
 
 
@@ -104,18 +139,24 @@ def analyze_decision(text):
     return {
 
 
-        "type": best,
+        "decision": selected,
 
 
-        "scores": scores,
+        "confidence": confidence,
 
 
-        "confidence": scores.get(
-            best,
-            0
+        "all_scores": scores,
+
+
+        "time":
+
+        str(
+            datetime.datetime.now()
         )
 
     }
+
+
 
 
 
@@ -129,3 +170,20 @@ def get_decision(text):
     return analyze_decision(
         text
     )
+
+
+
+
+
+
+
+
+def get_decisions(text):
+
+
+    result = analyze_decision(
+        text
+    )
+
+
+    return result

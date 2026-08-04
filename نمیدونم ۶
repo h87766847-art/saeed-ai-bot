@@ -1,0 +1,78 @@
+import json
+import datetime
+
+
+
+def analyze_decision(
+    problem,
+    options
+):
+
+
+    result = {
+
+        "problem": problem,
+
+        "options": [],
+
+        "created":
+        str(datetime.datetime.now())
+
+    }
+
+
+
+
+    for option in options:
+
+
+        item = {
+
+            "name": option,
+
+            "advantages": [],
+
+            "disadvantages": [],
+
+            "score": 0
+
+        }
+
+
+        result["options"].append(
+            item
+        )
+
+
+
+    return result
+
+
+
+
+
+
+
+def score_option(
+    advantages,
+    disadvantages
+):
+
+
+    score = 0
+
+
+
+    score += len(
+        advantages
+    ) * 2
+
+
+
+    score -= len(
+        disadvantages
+    )
+
+
+
+    return score

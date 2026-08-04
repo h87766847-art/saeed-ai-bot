@@ -1,113 +1,108 @@
-# ==========================================
-# Saeed AI - Memory Intelligence
-# Compatibility Version
-# ==========================================
+# memory_intelligence.py
+# Saeed Core v6.3
+# Smart Memory Intelligence
 
-from datetime import datetime
+
+import re
+
+
+
+IMPORTANT_WORDS = [
+
+    "اسم",
+    "نام",
+    "سن",
+    "علاقه",
+    "دوست دارم",
+    "متنفرم",
+    "کار",
+    "هدف",
+    "یاد بگیر",
+    "به یاد داشته باش"
+
+]
+
+
+
 
 
 def analyze_memory(text):
-    """
-    تحلیل متن برای تشخیص اطلاعات مهم
-    """
 
-    if not text:
-        return {
-            "important": False,
-            "category": "empty",
-            "content": ""
-        }
-
-
-    important_words = [
-        "من",
-        "اسمم",
-        "دوست دارم",
-        "علاقه",
-        "هدف",
-        "پروژه",
-        "کار",
-        "یاد بگیر",
-        "میخوام",
-        "می‌خوام"
-    ]
-
-
-    important = False
-
-    for word in important_words:
-        if word in text:
-            important = True
-            break
-
-
-    if important:
-
-        category = "personal"
-
-    else:
-
-        category = "general"
-
-
-
-    return {
-        "important": important,
-        "category": category,
-        "content": text,
-        "created_at": str(datetime.now())
-    }
-
-
-
-def extract_memory(text):
-    """
-    استخراج اطلاعات قابل ذخیره
-    """
-
-    result = analyze_memory(text)
-
-    if result["important"]:
-        return result
-
-    return None
-
-
-
-def calculate_memory_score(text):
-    """
-    امتیاز اهمیت حافظه
-    """
-
-    if not text:
-        return 0
+    text = text.lower()
 
 
     score = 0
 
 
-    keywords = [
-        "هدف",
-        "علاقه",
-        "پروژه",
-        "دوست دارم",
-        "اسمم"
-    ]
+    found = []
 
 
-    for word in keywords:
+
+    for word in IMPORTANT_WORDS:
 
         if word in text:
+
             score += 1
-
-
-    return score
+            found.append(word)
 
 
 
-def is_memory_worthy(text):
-    """
-    آیا این پیام ارزش ذخیره دارد؟
-    """
+    return {
 
-    return calculate_memory_score(text) > 0
+        "text": text,
+
+        "importance_score": score,
+
+        "important": score > 0,
+
+        "keywords": found
+
+    }
+
+
+
+
+
+def extract_information(text):
+
+
+    data = {}
+
+
+
+    patterns = {
+
+
+        "name":
+        r"(?:اسم من|نام من)\s+(.+)",
+
+
+        "age":
+        r"(?:سن من|من)\s+(\d+)\s+سال",
+
+
+        "interest":
+        r"(?:علاقه دارم به|دوست دارم)\s+(.+)"
+
+
+    }
+
+
+
+
+    for key, pattern in patterns.items():
+
+
+        result = re.search(
+            pattern,
+            text
+        )
+
+
+        if result:
+
+            data[key] = result.group(1).strip()
+
+
+
+    return data

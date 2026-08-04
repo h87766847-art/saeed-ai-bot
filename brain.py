@@ -1,74 +1,95 @@
 # brain.py
-# Saeed Core
-# Central Intelligence Brain System
+# Saeed Core v7.5
+# Central Intelligence Brain
 
 
 import datetime
 
 
-# اتصال امن به سیستم‌ها
+
+
 
 try:
+
     from memory_manager import (
-        add_memory,
-        get_best_memory
+        add_memory
     )
+
 except Exception:
+
     add_memory = None
-    get_best_memory = None
+
+
+
 
 
 try:
+
     from context_intelligence import (
-        detect_context
+        get_context_information
     )
+
 except Exception:
-    detect_context = None
+
+    get_context_information = None
+
+
+
 
 
 try:
+
     from intent_engine import (
         detect_intent
     )
+
 except Exception:
+
     detect_intent = None
 
 
+
+
+
 try:
+
     from learning_engine import (
         add_experience
     )
+
 except Exception:
+
     add_experience = None
 
 
+
+
+
 try:
+
     from event_engine import (
         emit_event
     )
+
 except Exception:
+
     emit_event = None
 
 
-try:
-    from identity_engine import (
-        get_identity
-    )
-except Exception:
-    get_identity = None
 
 
 
 
 
-BRAIN_VERSION = "7.0"
+BRAIN_VERSION = "7.5"
 
 
 
 
 
-CONVERSATIONS = []
 
+
+CONVERSATIONS = {}
 
 
 
@@ -77,10 +98,6 @@ CONVERSATIONS = []
 
 
 def init_database():
-
-    """
-    سازگاری با فایل‌های قدیمی
-    """
 
     return True
 
@@ -93,18 +110,27 @@ def init_database():
 
 def save_conversation(
 
-        user_text,
+        user,
 
         response
 
 ):
 
 
-    data = {
+    conversation_id = len(
+
+        CONVERSATIONS
+
+    ) + 1
+
+
+
+    CONVERSATIONS[conversation_id] = {
+
 
         "user":
 
-        user_text,
+        user,
 
 
         "response":
@@ -123,14 +149,8 @@ def save_conversation(
     }
 
 
-    CONVERSATIONS.append(
 
-        data
-
-    )
-
-
-    return data
+    return True
 
 
 
@@ -140,7 +160,7 @@ def save_conversation(
 
 def remember_important_information(
 
-        information
+        info
 
 ):
 
@@ -152,13 +172,19 @@ def remember_important_information(
 
             return add_memory(
 
-                information
+                info,
+
+                "important",
+
+                8
 
             )
+
 
         except Exception:
 
             pass
+
 
 
     return False
@@ -169,7 +195,7 @@ def remember_important_information(
 
 
 
-def analyze_input(
+def analyze_request(
 
         text
 
@@ -181,27 +207,20 @@ def analyze_input(
 
         "text":
 
-        text,
-
-
-        "time":
-
-        str(
-
-            datetime.datetime.now()
-
-        )
+        text
 
     }
 
 
 
-    if detect_context:
+
+
+    if get_context_information:
 
 
         try:
 
-            result["context"] = detect_context(
+            result["context"] = get_context_information(
 
                 text
 
@@ -209,7 +228,9 @@ def analyze_input(
 
         except Exception:
 
-            result["context"] = None
+            pass
+
+
 
 
 
@@ -227,7 +248,8 @@ def analyze_input(
 
         except Exception:
 
-            result["intent"] = None
+            pass
+
 
 
 
@@ -247,11 +269,13 @@ def process_brain(
 ):
 
 
-    analysis = analyze_input(
+    analysis = analyze_request(
 
         text
 
     )
+
+
 
 
 
@@ -264,9 +288,9 @@ def process_brain(
 
                 text,
 
-                "processing",
+                "brain_process",
 
-                "completed",
+                "success",
 
                 1
 
@@ -279,6 +303,8 @@ def process_brain(
 
 
 
+
+
     if emit_event:
 
 
@@ -286,7 +312,7 @@ def process_brain(
 
             emit_event(
 
-                "brain_processed",
+                "brain_activity",
 
                 analysis
 
@@ -299,6 +325,7 @@ def process_brain(
 
 
 
+
     response = {
 
 
@@ -307,7 +334,7 @@ def process_brain(
         "success",
 
 
-        "version":
+        "brain_version":
 
         BRAIN_VERSION,
 
@@ -319,7 +346,7 @@ def process_brain(
 
         "message":
 
-        "Request processed by Saeed Core"
+        "Saeed processed request"
 
     }
 
@@ -345,15 +372,10 @@ def process_brain(
 
 
 
-def get_brain_status():
+def brain_status():
 
 
     return {
-
-
-        "name":
-
-        "Saeed Brain",
 
 
         "version":
@@ -363,7 +385,11 @@ def get_brain_status():
 
         "conversations":
 
-        len(CONVERSATIONS),
+        len(
+
+            CONVERSATIONS
+
+        ),
 
 
         "status":

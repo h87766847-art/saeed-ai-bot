@@ -1,6 +1,6 @@
 # auto_upgrade_agent.py
-# Saeed Core v8.1
-# Automatic Upgrade Agent
+# Saeed Core v11.2
+# Auto Upgrade Agent Core
 
 
 import datetime
@@ -9,19 +9,33 @@ import datetime
 
 
 
-from version_manager import (
-    current_version
+from version_compare import (
+    needs_upgrade
 )
 
 
-from update_server import (
-    check_new_version,
-    get_latest_update
+from github_update_source import (
+    get_latest_version
 )
 
 
-from upgrade_pipeline import (
-    run_upgrade
+from update_downloader import (
+    download_file
+)
+
+
+from upgrade_self_test import (
+    run_self_test
+)
+
+
+from upgrade_installer import (
+    install_package
+)
+
+
+from upgrade_learning import (
+    learn_from_upgrade
 )
 
 
@@ -30,7 +44,8 @@ from upgrade_pipeline import (
 
 
 
-AUTO_LOG = []
+
+AGENT_LOG = []
 
 
 
@@ -39,93 +54,63 @@ AUTO_LOG = []
 
 
 
-def log_action(
 
-    action,
+def run_auto_upgrade(
 
-    data
+    owner,
+
+    repo,
+
+    current_version,
+
+    update_files
 
 ):
-
-
-    AUTO_LOG.append(
-
-        {
-
-            "action":
-
-            action,
-
-
-            "data":
-
-            data,
-
-
-            "time":
-
-            str(datetime.datetime.now())
-
-        }
-
-    )
-
-
-
-
-
-
-
-
-
-def check_upgrade_status():
-
-
-    version = current_version()
-
-
-
-    updates = check_new_version(
-
-        version
-
-    )
-
 
 
     result = {
 
 
-        "current":
+        "time":
 
-        version,
-
-
-        "available":
-
-        updates,
+        str(datetime.datetime.now()),
 
 
-        "upgrade_needed":
+        "status":
 
-        len(updates) > 0
+        "started"
 
     }
 
 
 
 
-    log_action(
 
-        "check",
 
-        result
+
+
+    # دریافت آخرین نسخه
+
+    latest = get_latest_version(
+
+        owner,
+
+        repo
 
     )
 
 
 
-    return result
+
+
+
+    if not latest:
+
+
+        result["status"] = "no_version"
+
+
+        return result
 
 
 
@@ -133,29 +118,22 @@ def check_upgrade_status():
 
 
 
-def start_auto_upgrade():
+    # مقایسه نسخه‌ها
 
 
-    status = check_upgrade_status()
+    if not needs_upgrade(
+
+        current_version,
+
+        latest
+
+    ):
 
 
-
-    if not status["upgrade_needed"]:
-
-
-        return {
+        result["status"] = "already_updated"
 
 
-            "status":
-
-            "no_update",
-
-
-            "message":
-
-            "نسخه فعلی به‌روز است"
-
-        }
+        return result
 
 
 
@@ -163,26 +141,23 @@ def start_auto_upgrade():
 
 
 
-    update = get_latest_update()
+    # تست سلامت قبل از ارتقا
+
+
+    test = run_self_test()
 
 
 
-    if not update:
+    if not test["success"]:
 
 
-        return {
+        result["status"] = "blocked"
 
 
-            "status":
-
-            "failed",
+        result["reason"] = "self test failed"
 
 
-            "message":
-
-            "بسته ارتقا پیدا نشد"
-
-        }
+        return result
 
 
 
@@ -190,25 +165,74 @@ def start_auto_upgrade():
 
 
 
-    result = run_upgrade(
+    # نصب فایل‌ها
 
-        update.get(
 
-            "manifest",
+    install_result = install_package(
 
-            "manifest.json"
+        update_files
+
+    )
+
+
+
+
+
+    result["install"] = install_result
+
+
+
+
+
+
+
+    if install_result["status"] == "completed":
+
+
+        result["status"] = "success"
+
+
+        learn_from_upgrade(
+
+            latest,
+
+            "success"
 
         )
 
-    )
 
 
 
 
 
-    log_action(
+    else:
 
-        "upgrade",
+
+        result["status"] = "failed"
+
+
+        learn_from_upgrade(
+
+            latest,
+
+            "failed",
+
+            [
+
+                "install_error"
+
+            ]
+
+        )
+
+
+
+
+
+
+
+
+    AGENT_LOG.append(
 
         result
 
@@ -224,7 +248,9 @@ def start_auto_upgrade():
 
 
 
-def auto_upgrade_status():
+
+
+def agent_status():
 
 
     return {
@@ -234,7 +260,7 @@ def auto_upgrade_status():
 
         len(
 
-            AUTO_LOG
+            AGENT_LOG
 
         ),
 
@@ -243,4 +269,4 @@ def auto_upgrade_status():
 
         "active"
 
-    }
+        }

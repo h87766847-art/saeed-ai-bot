@@ -1,16 +1,16 @@
 # planner_intelligence.py
-# Saeed Core
-# Advanced Planning Intelligence System
+# Saeed Core v7.0
+# Planning Intelligence System
 
 
 import datetime
-import json
+import uuid
 
 
 
 
 
-PLANS_DATABASE = []
+PLANS = {}
 
 
 
@@ -22,19 +22,27 @@ def create_plan(
 
         title,
 
-        steps,
+        description="",
 
-        priority="normal"
+        priority=5
 
 ):
 
 
-    plan = {
+    plan_id = str(
+
+        uuid.uuid4()
+
+    )
+
+
+
+    PLANS[plan_id] = {
 
 
         "id":
 
-        len(PLANS_DATABASE) + 1,
+        plan_id,
 
 
         "title":
@@ -42,9 +50,9 @@ def create_plan(
         title,
 
 
-        "steps":
+        "description":
 
-        steps,
+        description,
 
 
         "priority":
@@ -60,22 +68,18 @@ def create_plan(
         "created":
 
         str(
+
             datetime.datetime.now()
+
         )
 
     }
 
 
 
-    PLANS_DATABASE.append(
-
-        plan
-
-    )
+    return PLANS[plan_id]
 
 
-
-    return plan
 
 
 
@@ -86,17 +90,17 @@ def create_plan(
 def get_active_plans():
 
 
-    active = []
+    plans = []
 
 
 
-    for plan in PLANS_DATABASE:
+    for plan in PLANS.values():
 
 
         if plan["status"] == "active":
 
 
-            active.append(
+            plans.append(
 
                 plan
 
@@ -104,7 +108,7 @@ def get_active_plans():
 
 
 
-    return active
+    return plans
 
 
 
@@ -119,16 +123,20 @@ def complete_plan(
 ):
 
 
-    for plan in PLANS_DATABASE:
+    if plan_id in PLANS:
 
 
-        if plan["id"] == plan_id:
+        PLANS[plan_id]["status"] = "completed"
 
 
-            plan["status"] = "completed"
+        PLANS[plan_id]["completed"] = str(
+
+            datetime.datetime.now()
+
+        )
 
 
-            return True
+        return True
 
 
 
@@ -140,92 +148,86 @@ def complete_plan(
 
 
 
-def analyze_plan_request(
+def remove_plan(
 
-        text
+        plan_id
 
 ):
 
 
-    keywords = [
+    if plan_id in PLANS:
 
-        "برنامه",
 
-        "هدف",
+        del PLANS[plan_id]
 
-        "مرحله",
 
-        "شروع",
-
-        "پروژه"
-
-    ]
+        return True
 
 
 
-    score = 0
-
-
-
-    for word in keywords:
-
-
-        if word in text:
-
-
-            score += 1
+    return False
 
 
 
 
+
+
+
+def find_plan(
+
+        title
+
+):
+
+
+    result = []
+
+
+
+    for plan in PLANS.values():
+
+
+        if title.lower() in plan["title"].lower():
+
+
+            result.append(
+
+                plan
+
+            )
+
+
+
+    return result
+
+
+
+
+
+
+
+def planner_status():
 
 
     return {
 
 
-        "is_planning": score > 0,
+        "plans":
+
+        len(PLANS),
 
 
-        "confidence": score
+        "active":
 
-    }
+        len(
 
+            get_active_plans()
 
-
-
-
-
-
-def export_plans():
+        ),
 
 
-    return json.dumps(
+        "status":
 
-        PLANS_DATABASE,
+        "online"
 
-        ensure_ascii=False,
-
-        indent=2
-
-    )
-
-
-
-
-
-
-
-def clear_completed_plans():
-
-
-    global PLANS_DATABASE
-
-
-
-    PLANS_DATABASE = [
-
-        p for p in PLANS_DATABASE
-
-        if p["status"] != "completed"
-
-    ]
+            }

@@ -1,0 +1,86 @@
+# main_message_router.py
+# Saeed Core v9.6
+# Main Message Router
+
+
+from message_upgrade_bridge import (
+    check_upgrade_message
+)
+
+
+from brain import (
+    process_brain
+)
+
+
+
+
+
+def route_message(
+
+    message_text
+
+):
+
+
+    # اول بررسی فرمان ارتقا
+
+    upgrade_result = check_upgrade_message(
+
+        message_text
+
+    )
+
+
+
+
+
+    if upgrade_result["handled"]:
+
+
+        return {
+
+
+            "type":
+
+            "upgrade",
+
+
+            "response":
+
+            upgrade_result["response"]
+
+        }
+
+
+
+
+
+
+
+    # اگر فرمان ارتقا نبود
+
+    # ارسال به مغز اصلی سعید
+
+
+    brain_result = process_brain(
+
+        message_text
+
+    )
+
+
+
+    return {
+
+
+        "type":
+
+        "brain",
+
+
+        "response":
+
+        brain_result
+
+    }

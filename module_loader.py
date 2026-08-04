@@ -1,6 +1,6 @@
 # module_loader.py
-# Saeed Core
-# Automatic Module Loader System
+# Saeed Core v7.5
+# Automatic Module Loader
 
 
 import os
@@ -12,8 +12,6 @@ import datetime
 
 
 LOADED_MODULES = {}
-
-
 
 
 
@@ -33,7 +31,8 @@ IGNORE_FILES = [
 
 
 
-def find_modules(
+
+def discover_modules(
 
         folder="."
 
@@ -61,12 +60,9 @@ def find_modules(
             if file not in IGNORE_FILES:
 
 
-                name = file[:-3]
-
-
                 modules.append(
 
-                    name
+                    file[:-3]
 
                 )
 
@@ -82,7 +78,7 @@ def find_modules(
 
 def load_module(
 
-        module_name
+        name
 
 ):
 
@@ -92,23 +88,23 @@ def load_module(
 
         module = importlib.import_module(
 
-            module_name
+            name
 
         )
 
 
 
-        LOADED_MODULES[module_name] = {
-
-
-            "status":
-
-            "loaded",
+        LOADED_MODULES[name] = {
 
 
             "module":
 
             module,
+
+
+            "status":
+
+            "loaded",
 
 
             "time":
@@ -132,7 +128,7 @@ def load_module(
 
 
 
-        LOADED_MODULES[module_name] = {
+        LOADED_MODULES[name] = {
 
 
             "status":
@@ -142,16 +138,7 @@ def load_module(
 
             "error":
 
-            str(e),
-
-
-            "time":
-
-            str(
-
-                datetime.datetime.now()
-
-            )
+            str(e)
 
         }
 
@@ -172,19 +159,15 @@ def load_all_modules(
 ):
 
 
-    modules = find_modules(
-
-        folder
-
-    )
-
-
-
     results = {}
 
 
 
-    for module in modules:
+    for module in discover_modules(
+
+        folder
+
+    ):
 
 
         results[module] = load_module(
@@ -203,46 +186,28 @@ def load_all_modules(
 
 
 
-
-def get_loaded_modules():
-
-
-    return LOADED_MODULES
-
-
-
-
-
-
-
 def reload_module(
 
-        module_name
+        name
 
 ):
+
+
+    if name not in LOADED_MODULES:
+
+
+        return False
+
 
 
     try:
 
 
-        module = importlib.reload(
+        importlib.reload(
 
-            LOADED_MODULES[module_name]["module"]
-
-        )
-
-
-
-        LOADED_MODULES[module_name]["module"] = module
-
-
-
-        LOADED_MODULES[module_name]["time"] = str(
-
-            datetime.datetime.now()
+            LOADED_MODULES[name]["module"]
 
         )
-
 
 
         return True
@@ -260,13 +225,24 @@ def reload_module(
 
 
 
+def get_loaded_modules():
+
+
+    return LOADED_MODULES
+
+
+
+
+
+
+
 def loader_status():
 
 
     return {
 
 
-        "modules":
+        "total":
 
         len(
 
@@ -283,7 +259,7 @@ def loader_status():
 
             x for x in LOADED_MODULES.values()
 
-            if x["status"] == "loaded"
+            if x.get("status") == "loaded"
 
             ]
 
@@ -294,4 +270,4 @@ def loader_status():
 
         "active"
 
-    }
+}

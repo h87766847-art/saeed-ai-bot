@@ -1,118 +1,63 @@
 # main.py
-# Saeed Core
-# Advanced Telegram Interface
+# Saeed Core v7.0
+# Main Controller
 
 
-import os
-import logging
-import traceback
-
-
-
-from telegram import Update
-
-
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    filters
-)
-
-
-
-from brain import (
-    process_brain,
-    save_conversation
-)
-
-
-from core_router import (
-    analyze_request
-)
+import datetime
 
 
 
 
 
-# -------------------------
-# Logging
-# -------------------------
+try:
+    from core_router import (
+        route_message,
+        router_status
+    )
+except Exception as e:
 
+    route_message = None
 
-logging.basicConfig(
+    router_status = None
 
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-
-    level=logging.INFO
-
-)
-
-
-logger = logging.getLogger(
-    "Saeed"
-)
-
-
-
-
-
-
-# -------------------------
-# Config
-# -------------------------
-
-
-TOKEN = os.getenv(
-    "BOT_TOKEN"
-)
-
-
-
-
-
-
-
-# -------------------------
-# Commands
-# -------------------------
-
-
-async def start(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-):
-
-
-    await update.message.reply_text(
-
-        "سلام 👋\n"
-        "سعید فعال شد.\n"
-        "هسته هوشمند آماده دریافت پیام است."
-
+    print(
+        "Router Error:",
+        e
     )
 
 
 
 
 
-
-
-async def status(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-):
-
-
-    await update.message.reply_text(
-
-        "🧠 Saeed Core Online\n"
-        "Memory: Active\n"
-        "Brain: Active\n"
-        "Router: Active"
-
+try:
+    from core_manager import (
+        core_status
     )
+except Exception:
+
+    core_status = None
+
+
+
+
+
+try:
+    from self_diagnosis_engine import (
+        diagnosis_status
+    )
+except Exception:
+
+    diagnosis_status = None
+
+
+
+
+
+
+
+SYSTEM_NAME = "Saeed Core"
+
+VERSION = "7.0"
 
 
 
@@ -121,72 +66,59 @@ async def status(
 
 
 
+def process_message(
 
-# -------------------------
-# Message Processor
-# -------------------------
-
-
-async def handle_message(
-
-        update: Update,
-
-        context: ContextTypes.DEFAULT_TYPE
+        message
 
 ):
 
 
-    try:
+    if route_message:
 
 
-        user_text = update.message.text
+        try:
 
 
+            return route_message(
 
-        if not user_text:
+                message
 
-            return
-
-
-
+            )
 
 
-
-        # Router
-
-        route = analyze_request(
-
-            user_text
-
-        )
+        except Exception as e:
 
 
+            return {
 
 
+                "status":
+
+                "error",
 
 
-        # Brain
+                "message":
 
-        result = process_brain(
+                str(e)
 
-            user_text,
-
-            context=route
-
-        )
+            }
 
 
 
 
+    return {
 
 
-        response = result.get(
+        "status":
 
-            "response",
+        "offline",
 
-            "پیام پردازش شد."
 
-        )
+        "message":
+
+        "Router unavailable"
+
+    }
 
 
 
@@ -194,198 +126,93 @@ async def handle_message(
 
 
 
-        save_conversation(
-
-            user_text,
-
-            response
-
-        )
 
 
+def system_status():
 
 
+    status = {
 
 
+        "name":
 
-        await update.message.reply_text(
-
-            response
-
-        )
+        SYSTEM_NAME,
 
 
+        "version":
+
+        VERSION,
 
 
+        "time":
 
+        str(
 
-
-    except Exception as e:
-
-
-        logger.error(
-
-            str(e)
+            datetime.datetime.now()
 
         )
 
-
-        traceback.print_exc()
-
+    }
 
 
-        await update.message.reply_text(
-
-            "خطایی در پردازش رخ داد."
-
-        )
 
 
+
+    if router_status:
+
+
+        status["router"] = router_status()
 
 
 
 
 
 
-
-# -------------------------
-# Error Handler
-# -------------------------
+    if core_status:
 
 
-async def error_handler(
-
-        update,
-
-        context
-
-):
+        status["core"] = core_status()
 
 
-    logger.error(
 
-        "Telegram Error",
 
-        exc_info=context.error
+
+
+    if diagnosis_status:
+
+
+        status["diagnosis"] = diagnosis_status()
+
+
+
+
+
+    return status
+
+
+
+
+
+
+
+def start():
+
+
+    print(
+
+        SYSTEM_NAME,
+
+        "started"
 
     )
-
-
-
-
-
-
-
-
-
-# -------------------------
-# Run
-# -------------------------
-
-
-def main():
-
-
-    if not TOKEN:
-
-
-        print(
-
-            "BOT_TOKEN تنظیم نشده"
-
-        )
-
-        return
-
-
-
-
-
-
-    app = Application.builder().token(
-
-        TOKEN
-
-    ).build()
-
-
-
-
-
-
-    app.add_handler(
-
-        CommandHandler(
-
-            "start",
-
-            start
-
-        )
-
-    )
-
-
-
-
-
-    app.add_handler(
-
-        CommandHandler(
-
-            "status",
-
-            status
-
-        )
-
-    )
-
-
-
-
-
-    app.add_handler(
-
-        MessageHandler(
-
-            filters.TEXT & ~filters.COMMAND,
-
-            handle_message
-
-        )
-
-    )
-
-
-
-
-
-
-    app.add_error_handler(
-
-        error_handler
-
-    )
-
-
-
 
 
 
     print(
 
-        "Saeed Core Started..."
+        system_status()
 
     )
-
-
-
-
-
-
-    app.run_polling()
-
 
 
 
@@ -395,4 +222,83 @@ def main():
 
 if __name__ == "__main__":
 
-    main()
+
+    start()
+
+
+
+    while True:
+
+
+        try:
+
+
+            user_input = input(
+
+                "\nUser: "
+
+            )
+
+
+
+            if user_input.lower() in [
+
+                "exit",
+
+                "quit",
+
+                "خروج"
+
+            ]:
+
+
+                print(
+
+                    "Saeed stopped"
+
+                )
+
+
+                break
+
+
+
+
+
+            response = process_message(
+
+                user_input
+
+            )
+
+
+
+            print(
+
+                "\nSaeed:",
+
+                response
+
+            )
+
+
+
+
+
+        except KeyboardInterrupt:
+
+
+            break
+
+
+
+        except Exception as e:
+
+
+            print(
+
+                "System Error:",
+
+                e
+
+            )

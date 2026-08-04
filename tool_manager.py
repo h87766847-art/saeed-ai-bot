@@ -1,46 +1,22 @@
 # tool_manager.py
-# Saeed AI v2.9
-# Tool Execution System
+# Saeed Core
+# Advanced Tool Management System
 
 
-import json
-import os
 import datetime
+import traceback
 
 
 
 
 
-TOOL_FILE = "saeed_tools_log.json"
+TOOLS = {}
 
 
 
 
 
-
-
-
-def load_logs():
-
-
-    if not os.path.exists(TOOL_FILE):
-
-        return []
-
-
-
-    with open(
-
-        TOOL_FILE,
-
-        "r",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        return json.load(file)
+TOOL_LOG = []
 
 
 
@@ -49,89 +25,43 @@ def load_logs():
 
 
 
+def register_tool(
 
-def save_logs(data):
+        name,
 
+        function,
 
-    with open(
-
-        TOOL_FILE,
-
-        "w",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        json.dump(
-
-            data,
-
-            file,
-
-            ensure_ascii=False,
-
-            indent=4
-
-        )
-
-
-
-
-
-
-
-
-
-def register_action(
-
-    action,
-
-    result
+        description=""
 
 ):
 
 
-    logs = load_logs()
+    TOOLS[name] = {
 
 
+        "function":
 
-    record = {
-
-
-        "action": action,
+        function,
 
 
-        "result": result,
+        "description":
+
+        description,
 
 
-        "time":
+        "created":
 
-        str(datetime.datetime.now())
+        str(
+
+            datetime.datetime.now()
+
+        )
 
     }
 
 
 
-
-    logs.append(
-
-        record
-
-    )
-
-
-
-    save_logs(
-
-        logs
-
-    )
-
-
-
-    return record
+    return True
 
 
 
@@ -139,21 +69,64 @@ def register_action(
 
 
 
-def available_tools():
+def remove_tool(
+
+        name
+
+):
 
 
-    return [
+    if name in TOOLS:
 
-        "memory",
 
-        "planner",
+        del TOOLS[name]
 
-        "decision",
 
-        "profile"
+        return True
 
-    ]
 
+
+    return False
+
+
+
+
+
+
+
+
+def list_tools():
+
+
+    result = []
+
+
+
+    for name, data in TOOLS.items():
+
+
+        result.append(
+
+            {
+
+
+            "name":
+
+            name,
+
+
+            "description":
+
+            data["description"]
+
+
+            }
+
+        )
+
+
+
+    return result
 
 
 
@@ -164,49 +137,45 @@ def available_tools():
 
 def execute_tool(
 
-    tool_name,
+        name,
 
-    data
+        *args,
+
+        **kwargs
 
 ):
 
 
-    result = ""
+    try:
 
 
-
-    if tool_name == "memory":
-
-
-        result = (
-
-            "دسترسی به حافظه انجام شد"
-
-        )
+        if name not in TOOLS:
 
 
+            return {
 
 
+                "status":
 
-    elif tool_name == "planner":
+                "error",
 
 
-        result = (
+                "message":
 
-            "برنامه‌ریزی انجام شد"
+                "Tool not found"
 
-        )
+            }
 
 
 
 
 
-    elif tool_name == "decision":
 
+        result = TOOLS[name]["function"](
 
-        result = (
+            *args,
 
-            "تحلیل تصمیم انجام شد"
+            **kwargs
 
         )
 
@@ -214,12 +183,30 @@ def execute_tool(
 
 
 
-    elif tool_name == "profile":
+        TOOL_LOG.append(
+
+            {
 
 
-        result = (
+            "tool":
 
-            "پروفایل کاربر بررسی شد"
+            name,
+
+
+            "status":
+
+            "success",
+
+
+            "time":
+
+            str(
+
+                datetime.datetime.now()
+
+            )
+
+            }
 
         )
 
@@ -227,27 +214,81 @@ def execute_tool(
 
 
 
-    else:
+        return {
 
 
-        result = (
+            "status":
 
-            "ابزار ناشناخته است"
+            "success",
+
+
+            "result":
+
+            result
+
+        }
+
+
+
+
+
+    except Exception as e:
+
+
+
+        TOOL_LOG.append(
+
+            {
+
+
+            "tool":
+
+            name,
+
+
+            "status":
+
+            "failed",
+
+
+            "error":
+
+            str(e)
+
+            }
 
         )
 
 
 
 
-
-    register_action(
-
-        tool_name,
-
-        result
-
-    )
+        return {
 
 
+            "status":
 
-    return result
+            "error",
+
+
+            "error":
+
+            str(e),
+
+
+            "trace":
+
+            traceback.format_exc()
+
+        }
+
+
+
+
+
+
+
+
+def get_tool_logs():
+
+
+    return TOOL_LOG

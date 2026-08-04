@@ -3,46 +3,118 @@ from brain import (
     get_context_messages
 )
 
+
 from context_intelligence import (
     get_context_information
 )
 
 
 
+
+
+def search_memory(user_text, memory):
+
+
+    keywords = user_text.split()
+
+
+
+    found = []
+
+
+
+    for word in keywords:
+
+
+        if word in memory:
+
+
+            found.append(word)
+
+
+
+
+
+    if found:
+
+
+        return "اطلاعات مرتبط پیدا شد: " + ", ".join(found)
+
+
+
+    return "اطلاعات مرتبط قبلی پیدا نشد"
+
+
+
+
+
+
+
+
 def generate_response(user_text):
 
 
-    # گرفتن حافظه کوتاه مکالمه
+    # دریافت حافظه
 
     memory = build_memory_context()
 
 
 
-    # گرفتن وضعیت زمینه
+    # دریافت زمینه گفتگو
 
     context = get_context_information()
 
 
 
-    # گرفتن پیام‌های قبلی
+    # دریافت پیام‌های قبلی
 
     messages = get_context_messages()
 
 
 
+
+
+    # جستجو در حافظه
+
+    memory_result = search_memory(
+
+        user_text,
+
+        memory
+
+    )
+
+
+
+
+
+
+
     response = (
 
-        "🧠 سعید AI\n\n"
+        "🧠 سعید AI v2.1\n\n"
 
-        "پیام تو دریافت شد:\n"
+        "پیام جدید:\n"
 
-        + user_text
+        +
+
+        user_text
 
         +
 
         "\n\n"
 
-        "📚 حافظه مرتبط:\n"
+        "📚 بررسی حافظه:\n"
+
+        +
+
+        memory_result
+
+        +
+
+        "\n\n"
+
+        "🗂 سابقه گفتگو:\n"
 
         +
 
@@ -50,15 +122,19 @@ def generate_response(user_text):
 
         +
 
-        "\n\n"
+        "\n"
 
-        "🔎 وضعیت زمینه:\n"
+        +
+
+        "\n🔎 زمینه فعلی:\n"
 
         +
 
         str(context)
 
     )
+
+
 
 
 

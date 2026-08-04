@@ -1,81 +1,16 @@
 # planner_intelligence.py
-# Saeed AI v2.7
-# Goal Planning System
+# Saeed Core
+# Advanced Planning Intelligence System
 
 
-import json
-import os
 import datetime
+import json
 
 
 
 
 
-PLAN_FILE = "saeed_plans.json"
-
-
-
-
-
-
-
-
-def load_plans():
-
-
-    if not os.path.exists(PLAN_FILE):
-
-        return []
-
-
-
-    with open(
-
-        PLAN_FILE,
-
-        "r",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        return json.load(file)
-
-
-
-
-
-
-
-
-def save_plans(plans):
-
-
-    with open(
-
-        PLAN_FILE,
-
-        "w",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        json.dump(
-
-            plans,
-
-            file,
-
-            ensure_ascii=False,
-
-            indent=4
-
-        )
-
-
+PLANS_DATABASE = []
 
 
 
@@ -85,50 +20,56 @@ def save_plans(plans):
 
 def create_plan(
 
-    goal,
+        title,
 
-    steps
+        steps,
+
+        priority="normal"
 
 ):
-
-
-    plans = load_plans()
-
 
 
     plan = {
 
 
-        "goal": goal,
+        "id":
+
+        len(PLANS_DATABASE) + 1,
 
 
-        "steps": steps,
+        "title":
+
+        title,
 
 
-        "status": "active",
+        "steps":
+
+        steps,
+
+
+        "priority":
+
+        priority,
+
+
+        "status":
+
+        "active",
 
 
         "created":
 
-        str(datetime.datetime.now())
-
+        str(
+            datetime.datetime.now()
+        )
 
     }
 
 
 
-
-    plans.append(
+    PLANS_DATABASE.append(
 
         plan
-
-    )
-
-
-
-    save_plans(
-
-        plans
 
     )
 
@@ -142,34 +83,28 @@ def create_plan(
 
 
 
-
-
 def get_active_plans():
 
 
-    plans = load_plans()
+    active = []
 
 
 
-    return [
-
-        plan
-
-        for plan in plans
-
-        if plan.get(
-
-            "status"
-
-        )
-
-        ==
-
-        "active"
-
-    ]
+    for plan in PLANS_DATABASE:
 
 
+        if plan["status"] == "active":
+
+
+            active.append(
+
+                plan
+
+            )
+
+
+
+    return active
 
 
 
@@ -177,37 +112,120 @@ def get_active_plans():
 
 
 
-def complete_plan(goal):
+def complete_plan(
+
+        plan_id
+
+):
 
 
-    plans = load_plans()
+    for plan in PLANS_DATABASE:
 
 
-
-    for plan in plans:
-
-
-        if plan.get(
-
-            "goal"
-
-        )
-
-        == goal:
+        if plan["id"] == plan_id:
 
 
             plan["status"] = "completed"
 
 
+            return True
 
 
 
-    save_plans(
+    return False
 
-        plans
+
+
+
+
+
+
+def analyze_plan_request(
+
+        text
+
+):
+
+
+    keywords = [
+
+        "برنامه",
+
+        "هدف",
+
+        "مرحله",
+
+        "شروع",
+
+        "پروژه"
+
+    ]
+
+
+
+    score = 0
+
+
+
+    for word in keywords:
+
+
+        if word in text:
+
+
+            score += 1
+
+
+
+
+
+
+    return {
+
+
+        "is_planning": score > 0,
+
+
+        "confidence": score
+
+    }
+
+
+
+
+
+
+
+def export_plans():
+
+
+    return json.dumps(
+
+        PLANS_DATABASE,
+
+        ensure_ascii=False,
+
+        indent=2
 
     )
 
 
 
-    return plans
+
+
+
+
+def clear_completed_plans():
+
+
+    global PLANS_DATABASE
+
+
+
+    PLANS_DATABASE = [
+
+        p for p in PLANS_DATABASE
+
+        if p["status"] != "completed"
+
+    ]

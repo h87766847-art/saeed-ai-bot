@@ -1,10 +1,9 @@
 # context_intelligence.py
-# Saeed Core
-# Advanced Context Intelligence System
+# Saeed Core v7.0
+# Context Intelligence System
 
 
 import datetime
-import re
 
 
 
@@ -13,61 +12,64 @@ import re
 CONTEXT_TYPES = {
 
 
-    "question": [
+    "technical":
 
-        "چی",
-        "چرا",
-        "چطور",
-        "چگونه",
-        "آیا",
-        "؟"
-
-    ],
-
-
-
-    "learning": [
-
-        "یاد بده",
-        "آموزش",
-        "یاد بگیرم",
-        "توضیح بده"
-
-    ],
-
-
-
-    "coding": [
+    [
 
         "کد",
+
         "برنامه",
-        "پایتون",
-        "فایل",
+
         "خطا",
-        "ارور"
+
+        "فایل",
+
+        "پایتون",
+
+        "api"
 
     ],
 
 
+    "question":
 
-    "creative": [
+    [
+
+        "چرا",
+
+        "چگونه",
+
+        "چطور",
+
+        "چی"
+
+    ],
+
+
+    "creative":
+
+    [
+
+        "ایده",
 
         "بساز",
-        "ایده",
-        "داستان",
-        "انیمیشن",
-        "ویدیو"
+
+        "طراحی",
+
+        "داستان"
 
     ],
 
 
+    "learning":
 
-    "personal": [
+    [
 
-        "من",
-        "دوست دارم",
-        "احساس",
-        "حالم"
+        "یادگیری",
+
+        "آموزش",
+
+        "یاد بده"
 
     ]
 
@@ -79,8 +81,11 @@ CONTEXT_TYPES = {
 
 
 
+def detect_context(
 
-def detect_context(text):
+        text
+
+):
 
 
     text = text.lower()
@@ -91,16 +96,18 @@ def detect_context(text):
 
 
 
-    for context, keywords in CONTEXT_TYPES.items():
+    for context, words in CONTEXT_TYPES.items():
 
 
         score = 0
 
 
-        for word in keywords:
+
+        for word in words:
 
 
             if word in text:
+
 
                 score += 1
 
@@ -112,8 +119,7 @@ def detect_context(text):
 
 
 
-
-    best = max(
+    selected = max(
 
         scores,
 
@@ -125,9 +131,10 @@ def detect_context(text):
 
 
 
-    if scores[best] == 0:
+    if scores[selected] == 0:
 
-        best = "general"
+
+        selected = "general"
 
 
 
@@ -136,22 +143,33 @@ def detect_context(text):
     return {
 
 
-        "type": best,
+        "type":
+
+        selected,
 
 
         "confidence":
+
         scores.get(
-            best,
+
+            selected,
+
             0
+
         ),
 
 
-        "all_scores": scores,
+        "scores":
+
+        scores,
 
 
         "time":
+
         str(
+
             datetime.datetime.now()
+
         )
 
     }
@@ -163,46 +181,40 @@ def detect_context(text):
 
 
 
-def get_context_information(text):
+
+def get_context_information(
+
+        text
+
+):
 
 
     return detect_context(
-        text
-    )
-
-
-
-
-
-
-
-
-def extract_keywords(text):
-
-
-    words = re.findall(
-
-        r'\w+',
 
         text
 
     )
 
 
-    return words
 
 
 
 
 
 
-
-def is_technical_context(text):
-
-
-    context = detect_context(
-        text
-    )
+def context_status():
 
 
-    return context["type"] == "coding"
+    return {
+
+
+        "contexts":
+
+        len(CONTEXT_TYPES),
+
+
+        "status":
+
+        "active"
+
+    }

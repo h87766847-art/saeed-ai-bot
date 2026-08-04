@@ -1,6 +1,6 @@
 # core_manager.py
-# Saeed Core
-# Central Core Management System
+# Saeed Core v7.5
+# Central System Manager
 
 
 import datetime
@@ -21,7 +21,9 @@ def register_component(
 
         name,
 
-        component
+        component,
+
+        status="active"
 
 ):
 
@@ -36,10 +38,10 @@ def register_component(
 
         "status":
 
-        "registered",
+        status,
 
 
-        "time":
+        "registered":
 
         str(
 
@@ -52,29 +54,6 @@ def register_component(
 
 
     return True
-
-
-
-
-
-
-
-
-def get_component(
-
-        name
-
-):
-
-
-    if name in SYSTEM_COMPONENTS:
-
-
-        return SYSTEM_COMPONENTS[name]
-
-
-
-    return None
 
 
 
@@ -116,10 +95,85 @@ def update_component_status(
 
 
 
+def get_component(
+
+        name
+
+):
+
+
+    return SYSTEM_COMPONENTS.get(
+
+        name,
+
+        None
+
+    )
+
+
+
+
+
+
+
+
 def list_components():
 
 
     return SYSTEM_COMPONENTS
+
+
+
+
+
+
+
+def register_core_modules():
+
+
+    modules = [
+
+
+        "brain",
+
+
+        "memory",
+
+
+        "router",
+
+
+        "learning",
+
+
+        "upgrade",
+
+
+        "security",
+
+
+        "plugins"
+
+    ]
+
+
+
+    for module in modules:
+
+
+        register_component(
+
+            module,
+
+            module,
+
+            "active"
+
+        )
+
+
+
+    return True
 
 
 
@@ -137,20 +191,15 @@ def system_health():
     )
 
 
+
     active = 0
 
 
 
-    for component in SYSTEM_COMPONENTS.values():
+    for item in SYSTEM_COMPONENTS.values():
 
 
-        if component["status"] in [
-
-            "registered",
-
-            "active"
-
-        ]:
+        if item["status"] == "active":
 
 
             active += 1
@@ -174,9 +223,9 @@ def system_health():
 
         "health":
 
-        "good"
+        "excellent"
 
-        if active == total
+        if total == active
 
         else "warning",
 
@@ -198,6 +247,7 @@ def system_health():
 
 
 
+
 def core_status():
 
 
@@ -209,13 +259,29 @@ def core_status():
         "Saeed Core Manager",
 
 
-        "status":
-
-        "online",
-
-
         "components":
 
-        len(SYSTEM_COMPONENTS)
+        len(
 
-  }
+            SYSTEM_COMPONENTS
+
+        ),
+
+
+        "health":
+
+        system_health(),
+
+
+        "status":
+
+        "online"
+
+    }
+
+
+
+
+
+
+register_core_modules()

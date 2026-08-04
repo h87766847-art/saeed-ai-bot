@@ -1,6 +1,6 @@
 # core_manager.py
 # Saeed Core v7.5
-# Central Core Manager
+# Central Core Management
 
 
 import datetime
@@ -10,37 +10,33 @@ import datetime
 
 
 try:
-
     from capability_manager import capability_status
-
 except Exception:
-
     capability_status = None
 
 
-
-
-
 try:
-
-    from self_upgrade_engine import upgrade_status
-
+    from plugin_manager import plugin_status
 except Exception:
-
-    upgrade_status = None
-
-
-
+    plugin_status = None
 
 
 try:
+    from api_bridge import bridge_status
+except Exception:
+    bridge_status = None
 
+
+try:
     from module_loader import loader_status
-
 except Exception:
-
     loader_status = None
 
+
+try:
+    from self_upgrade_engine import upgrade_status
+except Exception:
+    upgrade_status = None
 
 
 
@@ -71,7 +67,7 @@ def register_component(
         status,
 
 
-        "registered":
+        "time":
 
         str(
 
@@ -80,7 +76,6 @@ def register_component(
         )
 
     }
-
 
 
     return True
@@ -104,13 +99,6 @@ def update_component(
 
 
         COMPONENTS[name]["status"] = status
-
-
-        COMPONENTS[name]["updated"] = str(
-
-            datetime.datetime.now()
-
-        )
 
 
         return True
@@ -139,12 +127,57 @@ def get_components():
 def system_health():
 
 
-    health = {
+    return {
 
 
         "components":
 
         COMPONENTS,
+
+
+        "capabilities":
+
+        capability_status()
+
+        if capability_status
+
+        else None,
+
+
+        "plugins":
+
+        plugin_status()
+
+        if plugin_status
+
+        else None,
+
+
+        "bridge":
+
+        bridge_status()
+
+        if bridge_status
+
+        else None,
+
+
+        "modules":
+
+        loader_status()
+
+        if loader_status
+
+        else None,
+
+
+        "upgrades":
+
+        upgrade_status()
+
+        if upgrade_status
+
+        else None,
 
 
         "time":
@@ -156,37 +189,6 @@ def system_health():
         )
 
     }
-
-
-
-    if capability_status:
-
-
-        health["capabilities"] = capability_status()
-
-
-
-
-
-    if upgrade_status:
-
-
-        health["upgrades"] = upgrade_status()
-
-
-
-
-
-    if loader_status:
-
-
-        health["modules"] = loader_status()
-
-
-
-
-
-    return health
 
 
 
@@ -226,7 +228,7 @@ def core_status():
 
 
 
-for item in [
+for component in [
 
     "brain",
 
@@ -240,13 +242,15 @@ for item in [
 
     "security",
 
-    "plugins"
+    "plugins",
+
+    "api"
 
 ]:
 
 
     register_component(
 
-        item
+        component
 
 )

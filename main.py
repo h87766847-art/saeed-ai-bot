@@ -1,6 +1,6 @@
 # main.py
-# Saeed Core v7.0
-# Main Controller
+# Saeed Core v7.5
+# Main System Controller
 
 
 import datetime
@@ -9,21 +9,7 @@ import datetime
 
 
 
-try:
-    from core_router import (
-        route_message,
-        router_status
-    )
-except Exception as e:
-
-    route_message = None
-
-    router_status = None
-
-    print(
-        "Router Error:",
-        e
-    )
+from core_router import route_message
 
 
 
@@ -31,11 +17,29 @@ except Exception as e:
 
 try:
     from core_manager import (
+        register_component,
         core_status
     )
+
 except Exception:
 
+    register_component = None
     core_status = None
+
+
+
+
+
+try:
+    from module_loader import (
+        load_all_modules,
+        loader_status
+    )
+
+except Exception:
+
+    load_all_modules = None
+    loader_status = None
 
 
 
@@ -45,6 +49,7 @@ try:
     from self_diagnosis_engine import (
         diagnosis_status
     )
+
 except Exception:
 
     diagnosis_status = None
@@ -53,12 +58,69 @@ except Exception:
 
 
 
-
-
 SYSTEM_NAME = "Saeed Core"
 
-VERSION = "7.0"
+VERSION = "7.5"
 
+
+
+
+
+
+
+
+def initialize_system():
+
+
+    if load_all_modules:
+
+
+        try:
+
+            load_all_modules()
+
+        except Exception:
+
+            pass
+
+
+
+
+
+    if register_component:
+
+
+        try:
+
+
+            register_component(
+
+                "main",
+
+                "active"
+
+            )
+
+
+            register_component(
+
+                "router",
+
+                "active"
+
+            )
+
+
+        except Exception:
+
+            pass
+
+
+
+
+
+
+    return True
 
 
 
@@ -73,52 +135,32 @@ def process_message(
 ):
 
 
-    if route_message:
+    try:
 
 
-        try:
+        return route_message(
+
+            message
+
+        )
 
 
-            return route_message(
-
-                message
-
-            )
+    except Exception as e:
 
 
-        except Exception as e:
+        return {
 
 
-            return {
+            "status":
+
+            "error",
 
 
-                "status":
+            "message":
 
-                "error",
+            str(e)
 
-
-                "message":
-
-                str(e)
-
-            }
-
-
-
-
-    return {
-
-
-        "status":
-
-        "offline",
-
-
-        "message":
-
-        "Router unavailable"
-
-    }
+        }
 
 
 
@@ -158,21 +200,19 @@ def system_status():
 
 
 
-    if router_status:
-
-
-        status["router"] = router_status()
-
-
-
-
-
-
     if core_status:
 
 
         status["core"] = core_status()
 
+
+
+
+
+    if loader_status:
+
+
+        status["modules"] = loader_status()
 
 
 
@@ -198,6 +238,10 @@ def system_status():
 def start():
 
 
+    initialize_system()
+
+
+
     print(
 
         SYSTEM_NAME,
@@ -207,12 +251,12 @@ def start():
     )
 
 
-
     print(
 
         system_status()
 
     )
+
 
 
 
@@ -233,7 +277,7 @@ if __name__ == "__main__":
         try:
 
 
-            user_input = input(
+            text = input(
 
                 "\nUser: "
 
@@ -241,7 +285,7 @@ if __name__ == "__main__":
 
 
 
-            if user_input.lower() in [
+            if text.lower() in [
 
                 "exit",
 
@@ -252,22 +296,14 @@ if __name__ == "__main__":
             ]:
 
 
-                print(
-
-                    "Saeed stopped"
-
-                )
-
-
                 break
 
 
 
 
+            result = process_message(
 
-            response = process_message(
-
-                user_input
+                text
 
             )
 
@@ -277,11 +313,9 @@ if __name__ == "__main__":
 
                 "\nSaeed:",
 
-                response
+                result
 
             )
-
-
 
 
 
@@ -297,8 +331,8 @@ if __name__ == "__main__":
 
             print(
 
-                "System Error:",
+                "Error:",
 
                 e
 
-            )
+    )

@@ -1,13 +1,75 @@
-from tool_router import check_tools
+# core_router.py
+# Saeed Core v6.3
+# Central Intelligence Router
 
-from decision_router import check_decision
 
-from goal_router import check_goal_request
+from brain import process_brain
+
+
+from memory_manager import (
+    get_best_memory
+)
+
+
+from context_intelligence import (
+    get_context_information
+)
+
+
+from planner_intelligence import (
+    get_active_plans
+)
+
 
 from decision_intelligence import (
-    detect_decision_request,
-    create_decision_analysis
+    get_decisions
 )
+
+
+
+
+
+def analyze_request(text):
+
+
+    memory = get_best_memory(
+
+        text
+
+    )
+
+
+    context = get_context_information()
+
+
+
+    plans = get_active_plans()
+
+
+
+    decisions = get_decisions()
+
+
+
+
+
+    return {
+
+        "text": text,
+
+        "memory": memory,
+
+        "context": context,
+
+        "plans": plans,
+
+        "decisions": decisions
+
+    }
+
+
+
+
 
 
 
@@ -15,18 +77,24 @@ from decision_intelligence import (
 def route_message(text):
 
 
-    # ابزارها
+    data = analyze_request(
 
-    tool = check_tools(text)
+        text
+
+    )
 
 
-    if tool["used"]:
+
+
+
+    if text.startswith("/"):
+
 
         return {
 
-            "type": "tool",
+            "type": "command",
 
-            "data": tool["result"]
+            "data": text
 
         }
 
@@ -34,56 +102,51 @@ def route_message(text):
 
 
 
-    # تصمیم‌گیری قدیمی
 
-    decision = check_decision(text)
+    if (
+
+        "هدف" in text
+
+        or
+
+        "برنامه" in text
+
+    ):
 
 
-    if decision["used"]:
+        return {
+
+            "type": "planner",
+
+            "data": data
+
+        }
+
+
+
+
+
+
+    if (
+
+        "تصمیم" in text
+
+        or
+
+        "انتخاب" in text
+
+    ):
+
 
         return {
 
             "type": "decision",
 
-            "data": decision["prompt"]
+            "data": data
 
         }
 
 
-
-
-
-    # تصمیم‌گیری هوشمند
-
-    if detect_decision_request(text):
-
-
-        return {
-
-            "type": "decision_analysis",
-
-            "data": create_decision_analysis(text)
-
-        }
-
-
-
-
-
-    # هدف‌ها
-
-    goal = check_goal_request(text)
-
-
-    if goal["used"]:
-
-        return {
-
-            "type": "goal",
-
-            "data": goal["data"]
-
-        }
 
 
 
@@ -93,6 +156,31 @@ def route_message(text):
 
         "type": "chat",
 
-        "data": None
+        "data": data
 
     }
+
+
+
+
+
+
+
+
+
+def send_to_brain(text):
+
+
+    routed_data = route_message(
+
+        text
+
+    )
+
+
+
+    return process_brain(
+
+        routed_data
+
+    )

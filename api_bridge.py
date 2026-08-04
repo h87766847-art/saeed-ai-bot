@@ -1,6 +1,6 @@
 # api_bridge.py
-# Saeed Core
-# Advanced API Bridge System
+# Saeed Core v7.5
+# Internal Communication Bridge
 
 
 import datetime
@@ -65,7 +65,7 @@ def create_request(
         "created",
 
 
-        "time":
+        "created":
 
         str(
 
@@ -78,6 +78,7 @@ def create_request(
 
 
     return REQUESTS[request_id]
+
 
 
 
@@ -129,9 +130,7 @@ def get_request(
 
     return REQUESTS.get(
 
-        request_id,
-
-        None
+        request_id
 
     )
 
@@ -223,4 +222,4 @@ def bridge_status():
 
         )
 
-    }
+        }

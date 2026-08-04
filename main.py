@@ -6,12 +6,7 @@
 import datetime
 
 
-
-
-
 from core_router import route_message
-
-
 
 
 
@@ -28,8 +23,6 @@ except Exception:
 
 
 
-
-
 try:
     from module_loader import (
         load_all_modules,
@@ -40,8 +33,6 @@ except Exception:
 
     load_all_modules = None
     loader_status = None
-
-
 
 
 
@@ -66,57 +57,37 @@ VERSION = "7.5"
 
 
 
-
-
-
 def initialize_system():
 
 
     if load_all_modules:
 
-
         try:
-
             load_all_modules()
 
         except Exception:
-
             pass
-
-
 
 
 
     if register_component:
 
-
         try:
 
-
             register_component(
-
                 "main",
-
                 "active"
-
             )
 
 
             register_component(
-
                 "router",
-
                 "active"
-
             )
 
 
         except Exception:
-
             pass
-
-
-
 
 
 
@@ -127,38 +98,22 @@ def initialize_system():
 
 
 
-
-def process_message(
-
-        message
-
-):
-
+def process_message(message):
 
     try:
 
-
         return route_message(
-
             message
-
         )
 
 
     except Exception as e:
 
-
         return {
 
+            "status": "error",
 
-            "status":
-
-            "error",
-
-
-            "message":
-
-            str(e)
+            "message": str(e)
 
         }
 
@@ -169,61 +124,37 @@ def process_message(
 
 
 
-
 def system_status():
-
 
     status = {
 
+        "name": SYSTEM_NAME,
 
-        "name":
+        "version": VERSION,
 
-        SYSTEM_NAME,
-
-
-        "version":
-
-        VERSION,
-
-
-        "time":
-
-        str(
-
+        "time": str(
             datetime.datetime.now()
-
         )
 
     }
 
 
 
-
-
     if core_status:
-
 
         status["core"] = core_status()
 
 
 
-
-
     if loader_status:
-
 
         status["modules"] = loader_status()
 
 
 
-
-
     if diagnosis_status:
 
-
         status["diagnosis"] = diagnosis_status()
-
-
 
 
 
@@ -235,26 +166,20 @@ def system_status():
 
 
 
-def start():
 
+def start():
 
     initialize_system()
 
 
-
     print(
-
         SYSTEM_NAME,
-
         "started"
-
     )
 
 
     print(
-
         system_status()
-
     )
 
 
@@ -270,69 +195,10 @@ if __name__ == "__main__":
     start()
 
 
-
-    while True:
-
-
-        try:
-
-
-            text = input(
-
-                "\nUser: "
-
-            )
-
-
-
-            if text.lower() in [
-
-                "exit",
-
-                "quit",
-
-                "خروج"
-
-            ]:
-
-
-                break
-
-
-
-
-            result = process_message(
-
-                text
-
-            )
-
-
-
-            print(
-
-                "\nSaeed:",
-
-                result
-
-            )
-
-
-
-        except KeyboardInterrupt:
-
-
-            break
-
-
-
-        except Exception as e:
-
-
-            print(
-
-                "Error:",
-
-                e
-
+    print(
+        "Saeed Core running..."
     )
+
+
+    # Console input disabled
+    # Telegram listener should run here

@@ -1,253 +1,85 @@
 # self_upgrade_engine.py
-# Saeed Core
-# Advanced Self Upgrade Management System
+# Saeed Core v7.5
+# Secure Self Upgrade System
 
 
-import os
-import shutil
 import datetime
-import json
 
 
 
 
 
-VERSION_FILE = "saeed_version.json"
+try:
 
-BACKUP_FOLDER = "saeed_backups"
+    from security_guard import verify_file
 
-UPGRADE_LOG = "upgrade_history.json"
+except Exception:
 
+    verify_file = None
 
 
 
 
 
+try:
 
-def load_version():
+    from backup_engine import create_backup
 
+except Exception:
 
-    if not os.path.exists(VERSION_FILE):
+    create_backup = None
 
 
-        return {
 
 
-            "version":
 
-            "6.3",
+UPGRADES = {}
 
 
-            "build":
 
-            1
 
-        }
 
 
 
 
+def request_upgrade(
 
-    with open(
+        name,
 
-        VERSION_FILE,
+        description
 
-        "r",
+):
 
-        encoding="utf-8"
 
-    ) as file:
+    upgrade_id = len(
 
+        UPGRADES
 
-        return json.load(file)
+    ) + 1
 
 
 
+    UPGRADES[upgrade_id] = {
 
 
+        "id":
 
+        upgrade_id,
 
 
+        "name":
 
-def save_version(data):
+        name,
 
 
-    with open(
+        "description":
 
-        VERSION_FILE,
+        description,
 
-        "w",
 
-        encoding="utf-8"
+        "status":
 
-    ) as file:
-
-
-        json.dump(
-
-            data,
-
-            file,
-
-            ensure_ascii=False,
-
-            indent=4
-
-        )
-
-
-
-
-
-
-
-def create_backup(filename):
-
-
-    if not os.path.exists(
-
-        BACKUP_FOLDER
-
-    ):
-
-
-        os.makedirs(
-
-            BACKUP_FOLDER
-
-        )
-
-
-
-
-    if os.path.exists(filename):
-
-
-        backup_name = (
-
-            BACKUP_FOLDER +
-
-            "/" +
-
-            filename +
-
-            "_" +
-
-            datetime.datetime.now().strftime(
-
-                "%Y%m%d_%H%M%S"
-
-            )
-
-        )
-
-
-        shutil.copy(
-
-            filename,
-
-            backup_name
-
-        )
-
-
-        return backup_name
-
-
-
-
-
-    return None
-
-
-
-
-
-
-
-def test_file(filename):
-
-
-    try:
-
-
-        with open(
-
-            filename,
-
-            "r",
-
-            encoding="utf-8"
-
-        ) as file:
-
-
-            code = file.read()
-
-
-
-        compile(
-
-            code,
-
-            filename,
-
-            "exec"
-
-        )
-
-
-
-        return True
-
-
-
-    except Exception:
-
-
-        return False
-
-
-
-
-
-
-
-def upgrade_module(filename):
-
-
-    backup = create_backup(
-
-        filename
-
-    )
-
-
-
-    success = test_file(
-
-        filename
-
-    )
-
-
-
-    log = {
-
-
-        "file":
-
-        filename,
-
-
-        "backup":
-
-        backup,
-
-
-        "success":
-
-        success,
+        "requested",
 
 
         "time":
@@ -262,85 +94,170 @@ def upgrade_module(filename):
 
 
 
-    save_upgrade_log(
+    return UPGRADES[upgrade_id]
 
-        log
+
+
+
+
+
+
+
+
+def check_upgrade_file(
+
+        filename
+
+):
+
+
+    if verify_file:
+
+
+        return verify_file(
+
+            filename
+
+        )
+
+
+
+    return {
+
+
+        "safe":
+
+        True
+
+    }
+
+
+
+
+
+
+
+
+
+def prepare_upgrade(
+
+        filename
+
+):
+
+
+    security = check_upgrade_file(
+
+        filename
 
     )
 
 
 
-    return log
+    if not security.get(
 
+        "safe",
 
-
-
-
-
-
-def save_upgrade_log(data):
-
-
-    logs = []
-
-
-
-    if os.path.exists(
-
-        UPGRADE_LOG
+        False
 
     ):
 
 
-        with open(
-
-            UPGRADE_LOG,
-
-            "r",
-
-            encoding="utf-8"
-
-        ) as file:
+        return {
 
 
-            logs = json.load(
+            "status":
 
-                file
+            "blocked",
+
+
+            "reason":
+
+            security.get(
+
+                "issues",
+
+                []
 
             )
 
-
-
-    logs.append(
-
-        data
-
-    )
+        }
 
 
 
-    with open(
-
-        UPGRADE_LOG,
-
-        "w",
-
-        encoding="utf-8"
-
-    ) as file:
 
 
-        json.dump(
 
-            logs,
+    if create_backup:
 
-            file,
 
-            ensure_ascii=False,
+        try:
 
-            indent=4
+            create_backup(
 
-        )
+                filename
+
+            )
+
+        except Exception:
+
+            pass
+
+
+
+
+
+
+    return {
+
+
+        "status":
+
+        "ready",
+
+
+        "file":
+
+        filename
+
+    }
+
+
+
+
+
+
+
+
+def complete_upgrade(
+
+        upgrade_id
+
+):
+
+
+    if upgrade_id in UPGRADES:
+
+
+        UPGRADES[upgrade_id]["status"] = "completed"
+
+
+        return True
+
+
+
+    return False
+
+
+
+
+
+
+
+def get_upgrades():
+
+
+    return UPGRADES
 
 
 
@@ -354,22 +271,17 @@ def upgrade_status():
     return {
 
 
-        "version":
+        "upgrades":
 
-        load_version(),
+        len(
+
+            UPGRADES
+
+        ),
 
 
-        "system":
+        "status":
 
-        "ready",
+        "secure"
 
-
-        "time":
-
-        str(
-
-            datetime.datetime.now()
-
-        )
-
-  }
+            }

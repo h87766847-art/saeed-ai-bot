@@ -1,229 +1,131 @@
 # decision_intelligence.py
-# Saeed AI v2.8
-# Decision Making System
+# Saeed Core v6.6
+# Decision Intelligence System
 
 
-import json
-import os
-import datetime
+DECISION_TYPES = {
 
 
+    "question": [
+
+        "چی",
+        "چرا",
+        "چطور",
+        "چگونه",
+        "آیا"
+
+    ],
 
 
+    "request": [
 
-DECISION_FILE = "saeed_decisions.json"
+        "بساز",
+        "انجام بده",
+        "کمک کن",
+        "ایجاد کن"
 
-
-
-
-
-
-
-
-def load_decisions():
+    ],
 
 
-    if not os.path.exists(DECISION_FILE):
+    "memory": [
 
-        return []
+        "یادته",
+        "به یاد داشته باش",
+        "ذخیره کن",
+        "یادت بمونه"
 
-
-
-    with open(
-
-        DECISION_FILE,
-
-        "r",
-
-        encoding="utf-8"
-
-    ) as file:
+    ],
 
 
-        return json.load(file)
+    "command": [
 
+        "شروع",
+        "برو",
+        "اجرا",
+        "فعال کن"
 
+    ]
 
-
-
-
-
-
-
-def save_decisions(data):
-
-
-    with open(
-
-        DECISION_FILE,
-
-        "w",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        json.dump(
-
-            data,
-
-            file,
-
-            ensure_ascii=False,
-
-            indent=4
-
-        )
+}
 
 
 
 
 
 
+def analyze_decision(text):
+
+
+    text = text.lower()
 
 
 
-def analyze_options(options):
-
-
-    results = []
+    scores = {}
 
 
 
-    for option in options:
+    for decision, words in DECISION_TYPES.items():
 
 
         score = 0
 
 
 
-        if "ساده" in option:
-
-            score += 2
+        for word in words:
 
 
+            if word in text:
 
-        if "سریع" in option:
-
-            score += 2
+                score += 1
 
 
 
-        if "بهتر" in option:
-
-            score += 3
+        scores[decision] = score
 
 
 
-        results.append(
 
-            {
 
-                "option": option,
+    best = max(
+        scores,
+        key=scores.get
+    )
 
-                "score": score
 
-            }
 
+
+    if scores[best] == 0:
+
+        best = "conversation"
+
+
+
+
+    return {
+
+
+        "type": best,
+
+
+        "scores": scores,
+
+
+        "confidence": scores.get(
+            best,
+            0
         )
-
-
-
-
-
-    results.sort(
-
-        key=lambda x: x["score"],
-
-        reverse=True
-
-    )
-
-
-
-    return results
-
-
-
-
-
-
-
-def create_decision(
-
-    problem,
-
-    options
-
-):
-
-
-    analysis = analyze_options(
-
-        options
-
-    )
-
-
-
-    decision = {
-
-
-        "problem": problem,
-
-
-        "options": analysis,
-
-
-        "recommended":
-
-        analysis[0]["option"]
-
-        if analysis
-
-        else None,
-
-
-        "time":
-
-        str(datetime.datetime.now())
 
     }
 
 
 
-    data = load_decisions()
 
 
 
-    data.append(
 
-        decision
+def get_decision(text):
 
+
+    return analyze_decision(
+        text
     )
-
-
-
-    save_decisions(
-
-        data
-
-    )
-
-
-
-    return decision
-
-
-
-
-
-
-
-
-
-def get_decisions():
-
-
-    return load_decisions()

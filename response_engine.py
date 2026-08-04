@@ -1,147 +1,217 @@
 # response_engine.py
-# Saeed AI v2.5
-# Memory Connected Response System
+# Saeed Core
+# Advanced Response Generation Engine
 
 
-from brain import (
-    build_memory_context,
-    get_context_messages
-)
-
-
-from context_intelligence import (
-    get_context_information
-)
-
-
-from memory_manager import (
-    get_best_memory
-)
+import datetime
 
 
 
 
 
-def build_memory_prompt(user_text):
+RESPONSE_MODES = {
 
 
-    memory = get_best_memory(
+    "short":
 
-        user_text
-
-    )
+    "کوتاه و مستقیم",
 
 
+    "normal":
 
-    if memory:
+    "متعادل",
+
+
+    "detailed":
+
+    "کامل و توضیحی",
+
+
+    "creative":
+
+    "خلاقانه"
+
+}
+
+
+
+
+
+
+
+DEFAULT_MODE = "normal"
+
+
+
+
+
+
+
+def set_response_mode(
+
+        mode
+
+):
+
+
+    global DEFAULT_MODE
+
+
+
+    if mode in RESPONSE_MODES:
+
+
+        DEFAULT_MODE = mode
+
+
+        return True
+
+
+
+    return False
+
+
+
+
+
+
+
+
+def get_response_mode():
+
+
+    return {
+
+
+        "mode":
+
+        DEFAULT_MODE,
+
+
+        "description":
+
+        RESPONSE_MODES.get(
+
+            DEFAULT_MODE
+
+        )
+
+    }
+
+
+
+
+
+
+
+
+def build_response(
+
+        content,
+
+        emotion=None,
+
+        context=None,
+
+        style=None
+
+):
+
+
+    response = {
+
+
+        "content":
+
+        content,
+
+
+        "emotion":
+
+        emotion,
+
+
+        "context":
+
+        context,
+
+
+        "style":
+
+        style,
+
+
+        "mode":
+
+        DEFAULT_MODE,
+
+
+        "time":
+
+        str(
+
+            datetime.datetime.now()
+
+        )
+
+    }
+
+
+
+    return response
+
+
+
+
+
+
+
+def format_response(
+
+        content
+
+):
+
+
+    if DEFAULT_MODE == "short":
+
+
+        return content[:120]
+
+
+
+
+
+    if DEFAULT_MODE == "detailed":
 
 
         return (
 
-            "خاطره مرتبط:\n"
+            content +
 
-            +
+            "\n\n"
 
-            memory.get(
-
-                "content",
-
-                ""
-
-            )
+            "در صورت نیاز می‌توانم بیشتر توضیح بدهم."
 
         )
 
 
 
-    return "خاطره مرتبطی پیدا نشد."
+
+
+    if DEFAULT_MODE == "creative":
+
+
+        return (
+
+            "✨ "
+
+            + content
+
+        )
 
 
 
 
 
-
-
-
-def generate_response(user_text):
-
-
-    # حافظه قدیمی گفتگو
-
-    memory_context = build_memory_context()
-
-
-
-    # زمینه فعلی
-
-    context = get_context_information()
-
-
-
-    # پیام‌های قبلی
-
-    messages = get_context_messages()
-
-
-
-    # حافظه هوشمند
-
-    smart_memory = build_memory_prompt(
-
-        user_text
-
-    )
-
-
-
-
-
-
-
-    response = (
-
-        "🧠 سعید AI v2.5\n\n"
-
-        "پیام تو:\n"
-
-        +
-
-        user_text
-
-        +
-
-        "\n\n"
-
-        "📌 حافظه مرتبط:\n"
-
-        +
-
-        smart_memory
-
-        +
-
-        "\n\n"
-
-        "📚 تاریخچه گفتگو:\n"
-
-        +
-
-        str(memory_context)
-
-        +
-
-        "\n\n"
-
-        "🔎 وضعیت فعلی:\n"
-
-        +
-
-        str(context)
-
-    )
-
-
-
-
-
-    return response
+    return content

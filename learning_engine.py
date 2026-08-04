@@ -1,26 +1,16 @@
 # learning_engine.py
 # Saeed Core
-# Advanced Learning Engine
+# Advanced Learning System
 
 
-import sqlite3
 import datetime
-import json
-
-
-
-DATABASE = "saeed_memory.db"
+import uuid
 
 
 
 
 
-
-def connect():
-
-    return sqlite3.connect(
-        DATABASE
-    )
+EXPERIENCES = {}
 
 
 
@@ -28,121 +18,56 @@ def connect():
 
 
 
+def add_experience(
 
-def init_learning_engine():
+        situation,
 
+        action,
 
-    conn = connect()
+        result,
 
-    cursor = conn.cursor()
-
-
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS learning_data(
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        input TEXT,
-
-        output TEXT,
-
-        feedback TEXT,
-
-        score INTEGER DEFAULT 0,
-
-        tags TEXT,
-
-        created TEXT
-
-    )
-    """)
-
-
-
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-
-
-def save_experience(
-
-        user_input,
-
-        output,
-
-        feedback=None,
-
-        score=0,
-
-        tags=None
+        score=1
 
 ):
 
 
-    try:
+    experience_id = str(
 
+        uuid.uuid4()
 
-        if tags is None:
-
-            tags = []
-
-
-
-        conn = connect()
-
-        cursor = conn.cursor()
+    )
 
 
 
-        cursor.execute(
-        """
-
-        INSERT INTO learning_data
-
-        (
-
-        input,
-
-        output,
-
-        feedback,
-
-        score,
-
-        tags,
-
-        created
-
-        )
+    EXPERIENCES[experience_id] = {
 
 
-        VALUES (?,?,?,?,?,?)
+        "id":
 
-        """,
+        experience_id,
 
-        (
 
-        user_input,
+        "situation":
 
-        output,
+        situation,
 
-        feedback,
+
+        "action":
+
+        action,
+
+
+        "result":
+
+        result,
+
+
+        "score":
 
         score,
 
-        json.dumps(
 
-            tags,
-
-            ensure_ascii=False
-
-        ),
+        "created":
 
         str(
 
@@ -150,204 +75,179 @@ def save_experience(
 
         )
 
-        ))
+    }
 
 
 
-        conn.commit()
+    return EXPERIENCES[experience_id]
 
-        conn.close()
 
+
+
+
+
+
+
+def get_experiences(
+
+        limit=50
+
+):
+
+
+    data = list(
+
+        EXPERIENCES.values()
+
+    )
+
+
+
+    return data[-limit:]
+
+
+
+
+
+
+
+
+def find_similar(
+
+        situation
+
+):
+
+
+    results = []
+
+
+
+    words = situation.lower().split()
+
+
+
+    for exp in EXPERIENCES.values():
+
+
+        text = exp["situation"].lower()
+
+
+
+        matches = 0
+
+
+
+        for word in words:
+
+
+            if word in text:
+
+
+                matches += 1
+
+
+
+
+        if matches > 0:
+
+
+            results.append(
+
+                {
+
+
+                    "experience":
+
+                    exp,
+
+
+                    "similarity":
+
+                    matches
+
+                }
+
+            )
+
+
+
+    results.sort(
+
+        key=lambda x: x["similarity"],
+
+        reverse=True
+
+    )
+
+
+
+    return results
+
+
+
+
+
+
+
+def improve_experience(
+
+        experience_id,
+
+        new_score
+
+):
+
+
+    if experience_id in EXPERIENCES:
+
+
+        EXPERIENCES[experience_id]["score"] = new_score
 
 
         return True
 
 
 
-    except Exception as e:
+    return False
 
 
-        print(
 
-            "Learning save error:",
 
-            e
 
-        )
 
 
-        return False
+def learning_report():
 
 
+    total = len(
 
+        EXPERIENCES
 
+    )
 
 
 
+    average = 0
 
-def get_learning_history(
 
-        limit=20
 
-):
+    if total > 0:
 
 
-    conn = connect()
+        average = sum(
 
-    cursor = conn.cursor()
+            x["score"]
 
+            for x in EXPERIENCES.values()
 
-
-    cursor.execute(
-
-    """
-
-    SELECT *
-
-    FROM learning_data
-
-    ORDER BY id DESC
-
-    LIMIT ?
-
-    """,
-
-    (
-
-    limit,
-
-    ))
-
-
-
-    result = cursor.fetchall()
-
-
-
-    conn.close()
-
-
-
-    return result
-
-
-
-
-
-
-
-
-def rate_experience(
-
-        experience_id,
-
-        score
-
-):
-
-
-    conn = connect()
-
-    cursor = conn.cursor()
-
-
-
-    cursor.execute(
-
-    """
-
-    UPDATE learning_data
-
-    SET score=?
-
-    WHERE id=?
-
-    """,
-
-    (
-
-    score,
-
-    experience_id
-
-    ))
-
-
-
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-
-
-
-def analyze_learning():
-
-
-    data = get_learning_history()
-
-
-
-    total = len(data)
-
-
-
-    if total == 0:
-
-
-        return {
-
-
-            "status":
-
-            "empty",
-
-
-            "total":
-
-            0
-
-        }
-
-
-
-
-
-
-    scores = []
-
-
-
-    for item in data:
-
-
-        scores.append(
-
-            item[4]
-
-        )
-
-
-
-
-
-    average = sum(scores) / total
-
+        ) / total
 
 
 
 
 
     return {
-
-
-        "status":
-
-        "active",
 
 
         "experiences":
@@ -357,15 +257,11 @@ def analyze_learning():
 
         "average_score":
 
-        average
-
-    }
+        average,
 
 
+        "status":
 
+        "learning"
 
-
-
-
-
-init_learning_engine()
+        }

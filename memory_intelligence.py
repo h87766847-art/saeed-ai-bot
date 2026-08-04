@@ -1,26 +1,56 @@
 # memory_intelligence.py
-# Saeed Core v6.3
-# Smart Memory Intelligence
+# Saeed Core
+# Advanced Memory Intelligence System
 
 
 import re
+import datetime
 
 
 
-IMPORTANT_WORDS = [
 
-    "اسم",
-    "نام",
-    "سن",
-    "علاقه",
-    "دوست دارم",
-    "متنفرم",
-    "کار",
-    "هدف",
-    "یاد بگیر",
-    "به یاد داشته باش"
 
-]
+IMPORTANT_PATTERNS = {
+
+
+    "identity": [
+
+        r"اسم من (.+)",
+        r"نام من (.+)",
+        r"من (.+) هستم"
+
+    ],
+
+
+
+    "age": [
+
+        r"(\d+) ساله هستم",
+        r"سن من (\d+)"
+
+    ],
+
+
+
+    "interest": [
+
+        r"علاقه دارم به (.+)",
+        r"دوست دارم (.+)"
+
+    ],
+
+
+
+    "goal": [
+
+        r"هدف من (.+)",
+        r"میخوام (.+)"
+
+    ]
+
+}
+
+
 
 
 
@@ -28,36 +58,72 @@ IMPORTANT_WORDS = [
 
 def analyze_memory(text):
 
-    text = text.lower()
-
 
     score = 0
-
 
     found = []
 
 
 
-    for word in IMPORTANT_WORDS:
+    important_words = [
+
+        "اسم",
+        "نام",
+        "سن",
+        "علاقه",
+        "هدف",
+        "دوست دارم",
+        "یاد بگیر",
+        "یاد داشته باش"
+
+    ]
+
+
+
+    for word in important_words:
+
 
         if word in text:
 
+
             score += 1
-            found.append(word)
+
+            found.append(
+                word
+            )
+
 
 
 
     return {
 
-        "text": text,
 
-        "importance_score": score,
+        "important":
 
-        "important": score > 0,
+        score > 0,
 
-        "keywords": found
+
+        "importance_score":
+
+        score,
+
+
+        "keywords":
+
+        found,
+
+
+        "time":
+
+        str(
+            datetime.datetime.now()
+        )
 
     }
+
+
+
+
 
 
 
@@ -66,43 +132,68 @@ def analyze_memory(text):
 def extract_information(text):
 
 
-    data = {}
+    information = {}
 
 
 
-    patterns = {
+    for category, patterns in IMPORTANT_PATTERNS.items():
 
 
-        "name":
-        r"(?:اسم من|نام من)\s+(.+)",
+        for pattern in patterns:
 
 
-        "age":
-        r"(?:سن من|من)\s+(\d+)\s+سال",
+            result = re.search(
 
+                pattern,
 
-        "interest":
-        r"(?:علاقه دارم به|دوست دارم)\s+(.+)"
+                text
 
-
-    }
+            )
 
 
 
-
-    for key, pattern in patterns.items():
-
-
-        result = re.search(
-            pattern,
-            text
-        )
+            if result:
 
 
-        if result:
+                information[category] = result.group(1).strip()
 
-            data[key] = result.group(1).strip()
+
+                break
 
 
 
-    return data
+    return information
+
+
+
+
+
+
+
+def calculate_memory_priority(data):
+
+
+    priority = 1
+
+
+
+    if data.get(
+        "important"
+    ):
+
+        priority += 3
+
+
+
+
+    priority += data.get(
+
+        "importance_score",
+
+        0
+
+    )
+
+
+
+    return priority

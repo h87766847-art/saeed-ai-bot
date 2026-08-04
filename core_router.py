@@ -6,28 +6,53 @@
 from brain import process_brain
 
 
+
+
+
 try:
+
     from memory_manager import get_best_memory
+
 except Exception:
+
     get_best_memory = None
 
 
+
+
+
 try:
+
     from context_intelligence import get_context_information
+
 except Exception:
+
     get_context_information = None
 
 
+
+
+
 try:
+
     from planner_intelligence import get_active_plans
+
 except Exception:
+
     get_active_plans = None
 
 
+
+
+
 try:
+
     from decision_intelligence import get_decisions
+
 except Exception:
+
     get_decisions = None
+
 
 
 
@@ -40,30 +65,50 @@ ROUTER_VERSION = "7.0"
 
 
 
-def analyze_request(text):
 
 
-    request_data = {
+
+def analyze_request(
+
+        text
+
+):
 
 
-        "text": text,
+    result = {
 
 
-        "router_version": ROUTER_VERSION
+        "input":
+
+        text,
+
+
+        "router":
+
+        ROUTER_VERSION
 
     }
 
 
 
+
+
     if get_context_information:
+
 
         try:
 
-            request_data["context"] = get_context_information(text)
+            result["context"] = get_context_information(
+
+                text
+
+            )
 
         except Exception:
 
-            request_data["context"] = None
+            result["context"] = None
+
+
 
 
 
@@ -71,13 +116,20 @@ def analyze_request(text):
 
     if get_best_memory:
 
+
         try:
 
-            request_data["memory"] = get_best_memory(text)
+            result["memory"] = get_best_memory(
+
+                text
+
+            )
 
         except Exception:
 
-            request_data["memory"] = None
+            result["memory"] = []
+
+
 
 
 
@@ -85,13 +137,16 @@ def analyze_request(text):
 
     if get_active_plans:
 
+
         try:
 
-            request_data["plans"] = get_active_plans()
+            result["plans"] = get_active_plans()
 
         except Exception:
 
-            request_data["plans"] = []
+            result["plans"] = []
+
+
 
 
 
@@ -99,28 +154,18 @@ def analyze_request(text):
 
     if get_decisions:
 
+
         try:
 
-            request_data["decisions"] = get_decisions(text)
+            result["decisions"] = get_decisions(
+
+                text
+
+            )
 
         except Exception:
 
-            request_data["decisions"] = None
-
-
-
-
-
-
-    brain_response = process_brain(text)
-
-
-
-    request_data["brain"] = brain_response
-
-
-
-    return request_data
+            result["decisions"] = []
 
 
 
@@ -128,10 +173,59 @@ def analyze_request(text):
 
 
 
-def route_message(text):
+    try:
 
 
-    return analyze_request(text)
+        result["brain"] = process_brain(
+
+            text
+
+        )
+
+
+    except Exception as e:
+
+
+        result["brain"] = {
+
+
+            "status":
+
+            "error",
+
+
+            "message":
+
+            str(e)
+
+        }
+
+
+
+
+
+
+    return result
+
+
+
+
+
+
+
+def route_message(
+
+        text
+
+):
+
+
+    return analyze_request(
+
+        text
+
+    )
+
 
 
 
@@ -145,12 +239,18 @@ def router_status():
     return {
 
 
-        "name": "Saeed Router",
+        "name":
+
+        "Saeed Router",
 
 
-        "version": ROUTER_VERSION,
+        "version":
+
+        ROUTER_VERSION,
 
 
-        "status": "online"
+        "status":
 
-            }
+        "online"
+
+    }

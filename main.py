@@ -1,51 +1,35 @@
 import os
 
-from threading import Thread
-from http.server import HTTPServer, BaseHTTPRequestHandler
-
-
 from telegram import Update
-
 from telegram.ext import (
     Application,
+    CommandHandler,
     MessageHandler,
     ContextTypes,
     filters
 )
 
 
-from groq import Groq
-
-
-from memory import init_database
-
-
-from brain import (
-    remember_important_information,
-    build_memory_context,
-    save_conversation,
-    get_context_messages
-)
-
-
-from planner import planning_context
-
-
-from reflection import create_reflection_prompt
-
-
-from self_evaluator import create_evaluation_prompt
-
-
 from core_router import route_message
 
+from brain import (
+    save_conversation,
+    remember_important_information,
+    init_database,
+    build_memory_context
+)
 
-from knowledge_router import retrieve_knowledge
+
+from context_intelligence import (
+    get_context_information
+)
 
 
-from personality_core import (
-    init_personality,
-    get_personality
+
+
+
+TOKEN = os.getenv(
+    "BOT_TOKEN"
 )
 
 
@@ -53,183 +37,194 @@ from personality_core import (
 
 
 # =========================
-# Health Server
+# شروع ربات
 # =========================
 
-
-class HealthHandler(BaseHTTPRequestHandler):
-
-    def do_GET(self):
-
-        self.send_response(200)
-
-        self.end_headers()
-
-        self.wfile.write(
-            b"Saeed Core v15.1 alive"
-        )
-
-
-
-
-def run_server():
-
-    server = HTTPServer(
-        ("0.0.0.0",10000),
-        HealthHandler
-    )
-
-    server.serve_forever()
-
-
-
-Thread(
-    target=run_server
-).start()
-
-
-
-
-
-
-# =========================
-# Initialize
-# =========================
-
-
-init_database()
-
-init_personality()
-
-
-
-
-
-
-# =========================
-# Personality
-# =========================
-
-
-personality = get_personality()
-
-
-
-SYSTEM = f"""
-
-تو {personality["name"]} هستی.
-
-دستیار هوش مصنوعی شخصی {personality["user"]}.
-
-
-سبک:
-
-{personality["style"]}
-
-
-قوانین:
-
-{chr(10).join(personality["behavior_rules"])}
-
-
-همیشه:
-
-- دقیق جواب بده.
-- منطقی تحلیل کن.
-- اگر مطمئن نیستی بگو.
-- از حافظه و دانش مرتبط استفاده کن.
-
-"""
-
-
-
-
-
-
-
-# =========================
-# API
-# =========================
-
-
-TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
-
-GROQ_KEY = os.environ["GROQ_KEY"]
-
-
-
-client = Groq(
-    api_key=GROQ_KEY
-)
-
-
-
-
-
-
-
-# =========================
-# Chat
-# =========================
-
-
-async def chat(
+async def start(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
 
 
-    text = update.message.text
+    await update.message.reply_text(
+
+        "سلام حسین 👋\n"
+        "سعید آماده است."
+
+    )
 
 
 
 
+
+
+
+
+# =========================
+# پردازش پیام
+# =========================
+
+async def message_handler(
+
+    update: Update,
+
+    context: ContextTypes.DEFAULT_TYPE
+
+):
+
+
+    user_text = update.message.text
+
+
+
+    # ذخیره پیام
 
     save_conversation(
+
         "user",
-        text
+
+        user_text
+
     )
 
 
-
+    # تحلیل حافظه و زمینه
 
     remember_important_information(
-        text
+
+        user_text
+
     )
 
 
 
-
-
-
-    # =====================
-    # Router
-    # =====================
-
+    # مسیریابی
 
     route = route_message(
-        text
+
+        user_text
+
     )
 
 
 
 
 
+
+    # =====================
+    # Decision Analysis
+    # =====================
+
+    if route["type"] == "decision_analysis":
+
+
+        analysis = route["data"]
+
+
+        response = (
+
+            "⚖️ تحلیل تصمیم\n\n"
+
+            "موضوع:\n"
+
+            +
+
+            analysis["problem"]
+
+            +
+
+            "\n\nگزینه‌ها:\n"
+
+        )
+
+
+
+        for option in analysis["options"]:
+
+
+            response += (
+
+                "\n• "
+
+                +
+
+                option["name"]
+
+            )
+
+
+
+        await update.message.reply_text(
+
+            response
+
+        )
+
+
+        save_conversation(
+
+            "assistant",
+
+            response
+
+        )
+
+
+        return
+
+
+
+
+
+
+
+    # =====================
+    # Goal
+    # =====================
+
+    if route["type"] == "goal":
+
+
+        response = str(
+
+            route["data"]
+
+        )
+
+
+        await update.message.reply_text(
+
+            response
+
+        )
+
+
+        return
+
+
+
+
+
+
+
+    # =====================
+    # Tool
+    # =====================
 
     if route["type"] == "tool":
 
 
-        answer = route["data"]
+        response = str(
 
+            route["data"]
 
-        save_conversation(
-            "assistant",
-            answer
         )
 
 
         await update.message.reply_text(
-            answer
+
+            response
+
         )
 
 
@@ -240,54 +235,18 @@ async def chat(
 
 
 
+
+    # =====================
+    # Decision ساده
+    # =====================
 
     if route["type"] == "decision":
 
 
-        response = client.chat.completions.create(
-
-            model="llama-3.1-8b-instant",
-
-            messages=[
-
-                {
-                    "role":"system",
-                    "content":SYSTEM
-                },
-
-
-                {
-                    "role":"user",
-                    "content":route["data"]
-                }
-
-            ],
-
-            temperature=0.5
-
-        )
-
-
-
-        answer = (
-
-            response
-            .choices[0]
-            .message
-            .content
-
-        )
-
-
-
-        save_conversation(
-            "assistant",
-            answer
-        )
-
-
         await update.message.reply_text(
-            answer
+
+            route["data"]
+
         )
 
 
@@ -300,277 +259,56 @@ async def chat(
 
 
     # =====================
-    # Memory + Knowledge
+    # Chat معمولی
     # =====================
 
 
-    knowledge = retrieve_knowledge(
-        text
-    )
+    memory = build_memory_context()
+
+    context = get_context_information()
 
 
 
-    plan = planning_context(
-        text
-    )
+    response = (
 
+        "🧠 وضعیت حافظه:\n"
 
+        +
 
+        context
 
+        +
 
+        "\n\n"
 
+        +
 
-    messages = [
+        "پیام دریافت شد:\n"
 
+        +
 
-        {
-
-            "role":"system",
-
-            "content":
-
-            SYSTEM
-
-
-            +
-
-            "\n\nحافظه حسین:\n"
-
-            +
-
-            build_memory_context()
-
-
-
-            +
-
-            "\n\nدانش مرتبط:\n"
-
-            +
-
-            knowledge
-
-
-
-            +
-
-            "\n\nبرنامه:\n"
-
-            +
-
-            plan
-
-        }
-
-
-    ]
-
-
-
-
-
-    messages.extend(
-
-        get_context_messages()
+        user_text
 
     )
 
 
 
 
+    await update.message.reply_text(
 
+        response
 
+    )
 
-    try:
 
 
-        # جواب اولیه
+    save_conversation(
 
+        "assistant",
 
-        response = client.chat.completions.create(
+        response
 
-
-            model="llama-3.1-8b-instant",
-
-
-            messages=messages,
-
-
-            temperature=0.7
-
-        )
-
-
-
-        draft = (
-
-            response
-            .choices[0]
-            .message
-            .content
-
-        )
-
-
-
-
-
-
-
-
-        # Reflection
-
-
-        reflection_prompt = create_reflection_prompt(
-
-            draft,
-
-            text
-
-        )
-
-
-
-
-
-        reflection = client.chat.completions.create(
-
-
-            model="llama-3.1-8b-instant",
-
-
-            messages=[
-
-                {
-
-                    "role":"user",
-
-                    "content":reflection_prompt
-
-                }
-
-            ],
-
-
-            temperature=0.3
-
-        )
-
-
-
-
-
-        improved = (
-
-            reflection
-            .choices[0]
-            .message
-            .content
-
-        )
-
-
-
-
-
-
-
-
-        # Self Evaluation
-
-
-        evaluation_prompt = create_evaluation_prompt(
-
-            text,
-
-            improved
-
-        )
-
-
-
-
-
-
-        evaluation = client.chat.completions.create(
-
-
-            model="llama-3.1-8b-instant",
-
-
-            messages=[
-
-                {
-
-                    "role":"user",
-
-                    "content":evaluation_prompt
-
-                }
-
-            ],
-
-
-            temperature=0.2
-
-        )
-
-
-
-
-
-
-        answer = (
-
-            evaluation
-            .choices[0]
-            .message
-            .content
-
-        )
-
-
-
-
-
-
-
-        save_conversation(
-
-            "assistant",
-
-            answer
-
-        )
-
-
-
-
-
-
-        await update.message.reply_text(
-
-            answer
-
-        )
-
-
-
-
-
-
-    except Exception as e:
-
-
-        print(e)
-
-
-
-        await update.message.reply_text(
-
-            "حسین، خطای فنی پیش آمد."
-
-        )
+    )
 
 
 
@@ -581,43 +319,65 @@ async def chat(
 
 
 # =========================
-# Telegram
+# اجرای اصلی
 # =========================
 
+def main():
 
 
-app = Application.builder().token(
-
-    TELEGRAM_TOKEN
-
-).build()
+    init_database()
 
 
 
+    app = Application.builder().token(
+
+        TOKEN
+
+    ).build()
 
 
-app.add_handler(
 
-    MessageHandler(
+    app.add_handler(
 
-        filters.TEXT & ~filters.COMMAND,
+        CommandHandler(
 
-        chat
+            "start",
+
+            start
+
+        )
 
     )
 
-)
+
+
+    app.add_handler(
+
+        MessageHandler(
+
+            filters.TEXT & ~filters.COMMAND,
+
+            message_handler
+
+        )
+
+    )
+
+
+
+    print(
+        "Saeed AI is running..."
+    )
+
+
+
+    app.run_polling()
 
 
 
 
 
-print(
-    "Saeed Core v15.1 running..."
-)
 
+if __name__ == "__main__":
 
-
-
-
-app.run_polling()
+    main()

@@ -1,42 +1,17 @@
 # backup_engine.py
-# Saeed Core
-# Advanced Backup Management System
+# Saeed Core v7.5
+# Automatic Backup System
 
 
 import os
 import shutil
 import datetime
-import json
 
 
 
 
 
-BACKUP_DIR = "saeed_backup"
-
-BACKUP_HISTORY = "backup_history.json"
-
-
-
-
-
-
-
-def create_backup_folder():
-
-
-    if not os.path.exists(
-
-        BACKUP_DIR
-
-    ):
-
-
-        os.makedirs(
-
-            BACKUP_DIR
-
-        )
+BACKUP_FOLDER = "saeed_backups"
 
 
 
@@ -44,27 +19,34 @@ def create_backup_folder():
 
 
 
-def backup_file(
-
-        filename
-
-):
+def create_backup(filename):
 
 
-    create_backup_folder()
+    if not os.path.exists(BACKUP_FOLDER):
+
+        os.makedirs(BACKUP_FOLDER)
 
 
 
-    if not os.path.exists(
-
-        filename
-
-    ):
 
 
-        return False
+    if not os.path.exists(filename):
+
+        return {
+
+            "status": "error",
+
+            "message": "file not found"
+
+        }
 
 
+
+
+
+
+
+    name = os.path.basename(filename)
 
 
 
@@ -76,37 +58,33 @@ def backup_file(
 
 
 
-    destination = (
+    backup_name = (
 
-        BACKUP_DIR
+        name +
 
-        +
-
-        "/"
-
-        +
-
-        filename.replace(
-
-            "/",
-
-            "_"
-
-        )
-
-        +
-
-        "_"
-
-        +
+        "_" +
 
         timestamp
+
+        +
+
+        ".backup"
 
     )
 
 
 
-    shutil.copy(
+    destination = os.path.join(
+
+        BACKUP_FOLDER,
+
+        backup_name
+
+    )
+
+
+
+    shutil.copy2(
 
         filename,
 
@@ -116,188 +94,80 @@ def backup_file(
 
 
 
-    save_history(
+    return {
 
-        {
+        "status":
 
-        "file":
-
-        filename,
+        "success",
 
 
         "backup":
 
-        destination,
+        destination
 
+    }
 
-        "time":
 
-        str(
 
-            datetime.datetime.now()
 
-        )
 
-        }
 
-    )
 
 
 
-    return destination
+def list_backups():
 
 
-
-
-
-
-
-
-def backup_project(
-
-        files
-
-):
-
-
-    results = []
-
-
-
-    for file in files:
-
-
-        result = backup_file(
-
-            file
-
-        )
-
-
-
-        results.append(
-
-            result
-
-        )
-
-
-
-    return results
-
-
-
-
-
-
-
-def save_history(
-
-        data
-
-):
-
-
-    history = []
-
-
-
-    if os.path.exists(
-
-        BACKUP_HISTORY
-
-    ):
-
-
-        with open(
-
-            BACKUP_HISTORY,
-
-            "r",
-
-            encoding="utf-8"
-
-        ) as file:
-
-
-            history = json.load(
-
-                file
-
-            )
-
-
-
-
-    history.append(
-
-        data
-
-    )
-
-
-
-    with open(
-
-        BACKUP_HISTORY,
-
-        "w",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        json.dump(
-
-            history,
-
-            file,
-
-            ensure_ascii=False,
-
-            indent=4
-
-        )
-
-
-
-
-
-
-
-
-def get_backup_history():
-
-
-    if not os.path.exists(
-
-        BACKUP_HISTORY
-
-    ):
-
+    if not os.path.exists(BACKUP_FOLDER):
 
         return []
 
 
 
-    with open(
+    return os.listdir(
 
-        BACKUP_HISTORY,
+        BACKUP_FOLDER
 
-        "r",
-
-        encoding="utf-8"
-
-    ) as file:
+    )
 
 
-        return json.load(
 
-            file
 
-        )
 
+
+
+
+
+def restore_backup(
+
+        backup_file,
+
+        target_file
+
+):
+
+
+    if not os.path.exists(
+
+        backup_file
+
+    ):
+
+
+        return False
+
+
+
+    shutil.copy2(
+
+        backup_file,
+
+        target_file
+
+    )
+
+
+    return True
 
 
 
@@ -313,14 +183,14 @@ def backup_status():
 
         "folder":
 
-        BACKUP_DIR,
+        BACKUP_FOLDER,
 
 
         "backups":
 
         len(
 
-            get_backup_history()
+            list_backups()
 
         ),
 

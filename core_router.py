@@ -4,6 +4,10 @@ from decision_router import check_decision
 
 from goal_router import check_goal_request
 
+from decision_intelligence import (
+    detect_decision_request,
+    create_decision_analysis
+)
 
 
 
@@ -13,18 +17,16 @@ def route_message(text):
 
     # ابزارها
 
-    tool = check_tools(
-        text
-    )
+    tool = check_tools(text)
 
 
     if tool["used"]:
 
         return {
 
-            "type":"tool",
+            "type": "tool",
 
-            "data":tool["result"]
+            "data": tool["result"]
 
         }
 
@@ -32,20 +34,18 @@ def route_message(text):
 
 
 
-    # تصمیم گیری
+    # تصمیم‌گیری قدیمی
 
-    decision = check_decision(
-        text
-    )
+    decision = check_decision(text)
 
 
     if decision["used"]:
 
         return {
 
-            "type":"decision",
+            "type": "decision",
 
-            "data":decision["prompt"]
+            "data": decision["prompt"]
 
         }
 
@@ -53,21 +53,35 @@ def route_message(text):
 
 
 
+    # تصمیم‌گیری هوشمند
 
-    # هدف و برنامه
+    if detect_decision_request(text):
 
-    goal = check_goal_request(
-        text
-    )
+
+        return {
+
+            "type": "decision_analysis",
+
+            "data": create_decision_analysis(text)
+
+        }
+
+
+
+
+
+    # هدف‌ها
+
+    goal = check_goal_request(text)
 
 
     if goal["used"]:
 
         return {
 
-            "type":"goal",
+            "type": "goal",
 
-            "data":goal["data"]
+            "data": goal["data"]
 
         }
 
@@ -75,13 +89,10 @@ def route_message(text):
 
 
 
-
-    # چت معمولی
-
     return {
 
-        "type":"chat",
+        "type": "chat",
 
-        "data":None
+        "data": None
 
     }

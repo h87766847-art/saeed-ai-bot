@@ -1,12 +1,80 @@
-from context_manager import (
-    init_context,
-    update_context,
-    context_prompt
-)
+# context_intelligence.py
+# Saeed Core
+# Advanced Context Intelligence System
+
+
+import datetime
+import re
 
 
 
-init_context()
+
+
+CONTEXT_TYPES = {
+
+
+    "question": [
+
+        "چی",
+        "چرا",
+        "چطور",
+        "چگونه",
+        "آیا",
+        "؟"
+
+    ],
+
+
+
+    "learning": [
+
+        "یاد بده",
+        "آموزش",
+        "یاد بگیرم",
+        "توضیح بده"
+
+    ],
+
+
+
+    "coding": [
+
+        "کد",
+        "برنامه",
+        "پایتون",
+        "فایل",
+        "خطا",
+        "ارور"
+
+    ],
+
+
+
+    "creative": [
+
+        "بساز",
+        "ایده",
+        "داستان",
+        "انیمیشن",
+        "ویدیو"
+
+    ],
+
+
+
+    "personal": [
+
+        "من",
+        "دوست دارم",
+        "احساس",
+        "حالم"
+
+    ]
+
+}
+
+
+
 
 
 
@@ -15,60 +83,126 @@ init_context()
 def detect_context(text):
 
 
-    topic = "گفتگو عمومی"
-
-    subtopic = ""
-
-    goal = ""
+    text = text.lower()
 
 
 
-
-    if "سعید" in text or "ربات" in text:
-
-        topic = "پروژه سعید"
+    scores = {}
 
 
 
-    if "حافظه" in text:
-
-        subtopic = "سیستم حافظه"
+    for context, keywords in CONTEXT_TYPES.items():
 
 
+        score = 0
 
 
-    if "کد" in text or "برنامه" in text:
-
-        subtopic = "توسعه نرم افزار"
+        for word in keywords:
 
 
+            if word in text:
+
+                score += 1
 
 
-    if "هدف" in text or "میخواهم" in text or "می‌خواهم" in text:
 
-        goal = text
+        scores[context] = score
 
 
 
 
 
-    update_context(
 
-        topic,
+    best = max(
 
-        subtopic,
+        scores,
 
-        goal
+        key=scores.get
 
     )
 
 
-    return True
+
+
+
+    if scores[best] == 0:
+
+        best = "general"
 
 
 
 
 
-def get_context_information():
+    return {
 
-    return context_prompt()
+
+        "type": best,
+
+
+        "confidence":
+        scores.get(
+            best,
+            0
+        ),
+
+
+        "all_scores": scores,
+
+
+        "time":
+        str(
+            datetime.datetime.now()
+        )
+
+    }
+
+
+
+
+
+
+
+
+def get_context_information(text):
+
+
+    return detect_context(
+        text
+    )
+
+
+
+
+
+
+
+
+def extract_keywords(text):
+
+
+    words = re.findall(
+
+        r'\w+',
+
+        text
+
+    )
+
+
+    return words
+
+
+
+
+
+
+
+def is_technical_context(text):
+
+
+    context = detect_context(
+        text
+    )
+
+
+    return context["type"] == "coding"

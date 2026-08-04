@@ -1,15 +1,19 @@
 # brain.py
-# Saeed Core v6.6
-# Smart Brain + Emotion + Decision
+# Saeed Core
+# Advanced Brain Engine
 
 
 import sqlite3
 import datetime
+import json
+import traceback
+
 
 
 from memory_manager import (
     init_memory_manager,
-    add_memory
+    add_memory,
+    get_best_memory
 )
 
 
@@ -31,8 +35,7 @@ from personality_engine import (
 
 
 from emotion_engine import (
-    detect_emotion,
-    get_emotion_response
+    detect_emotion
 )
 
 
@@ -45,6 +48,10 @@ from decision_intelligence import (
 DATABASE = "saeed_memory.db"
 
 
+
+# -----------------------------
+# Initialization
+# -----------------------------
 
 
 init_memory_manager()
@@ -73,32 +80,37 @@ def init_database():
     cursor = conn.cursor()
 
 
+
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS brain_logs(
+    CREATE TABLE IF NOT EXISTS brain_logs(
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            message TEXT,
+        input TEXT,
 
-            time TEXT
+        output TEXT,
 
-        )
+        data TEXT,
+
+        time TEXT
+
+    )
     """)
 
 
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS conversations(
+    CREATE TABLE IF NOT EXISTS conversations(
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            user TEXT,
+        user TEXT,
 
-            assistant TEXT,
+        assistant TEXT,
 
-            time TEXT
+        time TEXT
 
-        )
+    )
     """)
 
 
@@ -113,7 +125,77 @@ def init_database():
 
 
 
-def save_brain_log(text):
+# -----------------------------
+# Logging
+# -----------------------------
+
+
+def save_log(
+        user_input,
+        output,
+        data
+):
+
+    try:
+
+        conn = connect()
+
+        cursor = conn.cursor()
+
+
+
+        cursor.execute(
+        """
+        INSERT INTO brain_logs
+        (
+        input,
+        output,
+        data,
+        time
+        )
+
+        VALUES (?,?,?,?)
+        """,
+
+        (
+
+        user_input,
+
+        output,
+
+        json.dumps(
+            data,
+            ensure_ascii=False
+        ),
+
+        str(
+            datetime.datetime.now()
+        )
+
+        ))
+
+
+
+        conn.commit()
+
+        conn.close()
+
+
+
+    except Exception:
+
+        traceback.print_exc()
+
+
+
+
+
+
+
+def save_conversation(
+        user,
+        assistant
+):
 
     try:
 
@@ -123,19 +205,28 @@ def save_brain_log(text):
 
 
         cursor.execute(
-            """
-            INSERT INTO brain_logs(
-                message,
-                time
-            )
-            VALUES (?,?)
-            """,
-
-            (
-                text,
-                str(datetime.datetime.now())
-            )
+        """
+        INSERT INTO conversations
+        (
+        user,
+        assistant,
+        time
         )
+
+        VALUES (?,?,?)
+        """,
+
+        (
+
+        user,
+
+        assistant,
+
+        str(
+            datetime.datetime.now()
+        )
+
+        ))
 
 
         conn.commit()
@@ -143,33 +234,59 @@ def save_brain_log(text):
         conn.close()
 
 
-    except Exception as e:
 
-        print(
-            "Brain log error:",
-            e
+    except Exception:
+
+        traceback.print_exc()
+
+
+
+
+
+
+
+
+# -----------------------------
+# Memory
+# -----------------------------
+
+
+def remember(
+        text,
+        importance=5
+):
+
+    try:
+
+        add_memory(
+
+            text,
+
+            category="brain",
+
+            importance=importance
+
         )
 
 
+        return True
+
+
+
+    except Exception:
+
+        return False
 
 
 
 
 
-def remember_important_information(
-        information
-):
-
-    add_memory(
-        information,
-        category="important",
-        importance=5
-    )
 
 
 
-
-
+# -----------------------------
+# Main Brain
+# -----------------------------
 
 
 def process_brain(
@@ -181,117 +298,159 @@ def process_brain(
 ):
 
 
-    detected_context = detect_context(
-        text
-    )
+    result = {}
 
 
 
-    emotion = detect_emotion(
-        text
-    )
+    try:
+
+
+        result["input"] = text
 
 
 
-    decision = get_decision(
-        text
-    )
+        # Context
+
+        result["context"] = detect_context(
+            text
+        )
 
 
 
-    memory_analysis = analyze_memory(
-        text
-    )
+        # Emotion
+
+        result["emotion"] = detect_emotion(
+            text
+        )
 
 
 
-    if memory_analysis.get(
-        "important"
-    ):
+        # Decision
 
-        remember_important_information(
+        result["decision"] = get_decision(
+            text
+        )
+
+
+
+        # Memory analysis
+
+        memory_info = analyze_memory(
+            text
+        )
+
+
+        result["memory_analysis"] = memory_info
+
+
+
+
+        # Extract information
+
+        result["information"] = extract_information(
             text
         )
 
 
 
 
-    information = extract_information(
-        text
-    )
+        # Important memory save
+
+        if memory_info.get(
+            "important",
+            False
+        ):
 
 
+            remember(
+                text,
 
+                memory_info.get(
+                    "importance_score",
+                    5
+                )
 
-    personality = get_personality()
-
-
-
-
-
-    response = add_personality(
-        get_emotion_response(
-            emotion["emotion"]
-        )
-    )
-
-
-
-
-    save_brain_log(
-        text
-    )
+            )
 
 
 
 
 
-    return {
+        # Related memories
 
-
-        "input": text,
-
-
-        "response": response,
-
-
-        "personality": personality,
-
-
-        "emotion": emotion,
-
-
-        "decision": decision,
-
-
-        "context": detected_context,
-
-
-        "memory": memory_analysis,
-
-
-        "information": information,
-
-
-        "plans": plans,
-
-
-        "decisions": decisions,
-
-
-        "status": "success",
-
-
-        "time": str(
-            datetime.datetime.now()
+        result["related_memory"] = get_best_memory(
+            text
         )
 
-    }
+
+
+
+
+        # Personality
+
+        result["personality"] = get_personality()
+
+
+
+
+
+        # Internal response layer
+
+        response = add_personality(
+            "درخواست شما پردازش شد."
+        )
+
+
+
+        result["response"] = response
+
+
+
+        result["status"] = "success"
+
+
+
+
+    except Exception as e:
+
+
+        result = {
+
+            "status": "error",
+
+            "error": str(e),
+
+            "trace":
+            traceback.format_exc()
+
+        }
+
+
+
+
+    save_log(
+
+        text,
+
+        result.get(
+            "response",
+            ""
+        ),
+
+        result
+
+    )
+
+
+
+    return result
 
 
 
 
 
 
+
+# Start database
 
 init_database()

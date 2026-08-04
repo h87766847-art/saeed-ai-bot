@@ -1,110 +1,88 @@
-# main.py
-# Saeed Core repaired version
+import os
 
-import datetime
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder,
+    MessageHandler,
+    CommandHandler,
+    ContextTypes,
+    filters
+)
 
-
-try:
-    from core_router import route_message
-except Exception:
-    route_message = None
-
-
-try:
-    from core_manager import register_component, core_status
-except Exception:
-    register_component = None
-    core_status = None
+from main import process_message
 
 
-try:
-    from module_loader import load_all_modules, loader_status
-except Exception:
-    load_all_modules = None
-    loader_status = None
+TOKEN = os.getenv("BOT_TOKEN")
 
 
-SYSTEM_NAME = "Saeed Core"
-VERSION = "7.5"
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-
-def initialize_system():
-
-    if load_all_modules:
-        try:
-            load_all_modules()
-        except Exception as e:
-            print("Module load error:", e)
-
-
-    if register_component:
-        try:
-            register_component("main", "active")
-            register_component("router", "active")
-        except Exception:
-            pass
-
-
-    return True
+    await update.message.reply_text(
+        "سلام، سعید آماده است."
+    )
 
 
 
-def process_message(message):
+async def handle_message(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
-    try:
+    text = update.message.text
 
-        if route_message:
-            return route_message(message)
-
-        return "Router not available"
-
-    except Exception as e:
-
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+    result = process_message(text)
 
 
+    if isinstance(result, dict):
 
-def system_status():
+        answer = result.get(
+            "message",
+            str(result)
+        )
 
-    data = {
-        "name": SYSTEM_NAME,
-        "version": VERSION,
-        "time": str(datetime.datetime.now())
-    }
+    else:
 
-
-    if core_status:
-        try:
-            data["core"] = core_status()
-        except:
-            pass
+        answer = str(result)
 
 
-    if loader_status:
-        try:
-            data["modules"] = loader_status()
-        except:
-            pass
-
-
-    return data
+    await update.message.reply_text(
+        answer
+    )
 
 
 
-def start():
+def main():
 
-    initialize_system()
+    app = ApplicationBuilder()\
+        .token(TOKEN)\
+        .build()
 
-    print("Saeed Core started")
-    print(system_status())
+
+    app.add_handler(
+        CommandHandler(
+            "start",
+            start
+        )
+    )
+
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            handle_message
+        )
+    )
+
+
+    print(
+        "Saeed Telegram Bot Running..."
+    )
+
+
+    app.run_polling()
 
 
 
 if __name__ == "__main__":
 
-    start()
-
-    print("Saeed Core running...")
+    main()

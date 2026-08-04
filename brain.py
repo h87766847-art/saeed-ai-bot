@@ -28,6 +28,7 @@ DATABASE = "saeed_memory.db"
 
 
 
+# شروع سیستم حافظه
 init_memory_manager()
 
 
@@ -38,37 +39,44 @@ def connect():
 
 
 
+
 def init_database():
 
     conn = connect()
     cursor = conn.cursor()
 
 
-    cursor.execute(
-        """
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS brain_logs(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             message TEXT,
             time TEXT
         )
-        """
-    )
+    """)
 
 
-    cursor.execute(
-        """
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS conversations(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user TEXT,
             assistant TEXT,
             time TEXT
         )
-        """
-    )
+    """)
+
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS important_information(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            information TEXT,
+            time TEXT
+        )
+    """)
 
 
     conn.commit()
     conn.close()
+
 
 
 
@@ -99,6 +107,7 @@ def save_brain_log(text):
     except Exception as e:
 
         print("Brain log error:", e)
+
 
 
 
@@ -134,20 +143,64 @@ def save_conversation(user_text, assistant_text):
 
     except Exception as e:
 
-        print("Conversation save error:", e)
+        print("Conversation error:", e)
+
+
+
+
+
+def remember_important_information(information):
+
+    try:
+
+        conn = connect()
+        cursor = conn.cursor()
+
+
+        cursor.execute(
+            """
+            INSERT INTO important_information(
+                information,
+                time
+            )
+            VALUES (?,?)
+            """,
+            (
+                information,
+                str(datetime.datetime.now())
+            )
+        )
+
+
+        conn.commit()
+        conn.close()
+
+
+        return True
+
+
+    except Exception as e:
+
+        print("Memory save error:", e)
+
+        return False
+
+
 
 
 
 
 def process_brain(
-    text,
-    context=None,
-    memory=None,
-    plans=None,
-    decisions=None
+        text,
+        context=None,
+        memory=None,
+        plans=None,
+        decisions=None
 ):
 
+
     try:
+
         detected_context = detect_context(text)
 
     except Exception:
@@ -166,6 +219,7 @@ def process_brain(
 
 
 
+
     try:
 
         add_memory(text)
@@ -173,6 +227,7 @@ def process_brain(
     except Exception:
 
         pass
+
 
 
 
@@ -201,4 +256,6 @@ def process_brain(
 
 
 
+
+# ساخت دیتابیس هنگام اجرا
 init_database()

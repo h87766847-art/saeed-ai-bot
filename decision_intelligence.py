@@ -1,158 +1,104 @@
 # decision_intelligence.py
-# Saeed Core
-# Advanced Decision Intelligence System
+# Saeed Core v7.0
+# Decision Intelligence System
 
 
 import datetime
+import uuid
 
 
 
 
 
-DECISION_PATTERNS = {
+DECISIONS = {}
 
 
-    "question": [
 
-        "چی",
-        "چرا",
-        "چطور",
-        "چگونه",
-        "آیا",
-        "؟"
 
-    ],
 
 
 
-    "command": [
+def create_decision(
 
-        "برو",
-        "اجرا کن",
-        "فعال کن",
-        "شروع کن"
+        question,
 
-    ],
+        options
 
+):
 
 
-    "creation": [
+    decision_id = str(
 
-        "بساز",
-        "ایجاد کن",
-        "طراحی کن",
-        "درست کن"
-
-    ],
-
-
-
-    "memory": [
-
-        "یادته",
-        "ذخیره کن",
-        "فراموش نکن",
-        "به یاد داشته باش"
-
-    ],
-
-
-
-    "analysis": [
-
-        "بررسی کن",
-        "تحلیل کن",
-        "مقایسه کن",
-        "نظر بده"
-
-    ]
-
-}
-
-
-
-
-
-
-
-
-def analyze_decision(text):
-
-
-    text = text.lower()
-
-
-
-    scores = {}
-
-
-
-    for decision, patterns in DECISION_PATTERNS.items():
-
-
-        score = 0
-
-
-
-        for pattern in patterns:
-
-
-            if pattern in text:
-
-                score += 1
-
-
-
-        scores[decision] = score
-
-
-
-
-
-    selected = max(
-
-        scores,
-
-        key=scores.get
+        uuid.uuid4()
 
     )
 
 
 
+    DECISIONS[decision_id] = {
 
 
-    confidence = scores[selected]
+        "id":
+
+        decision_id,
+
+
+        "question":
+
+        question,
+
+
+        "options":
+
+        options,
+
+
+        "selected":
+
+        None,
+
+
+        "created":
+
+        str(
+
+            datetime.datetime.now()
+
+        )
+
+    }
+
+
+
+    return DECISIONS[decision_id]
 
 
 
 
 
-    if confidence == 0:
-
-
-        selected = "conversation"
 
 
 
+def evaluate_option(
+
+        option,
+
+        score
+
+):
 
 
     return {
 
 
-        "decision": selected,
+        "option":
+
+        option,
 
 
-        "confidence": confidence,
+        "score":
 
-
-        "all_scores": scores,
-
-
-        "time":
-
-        str(
-            datetime.datetime.now()
-        )
+        score
 
     }
 
@@ -164,11 +110,116 @@ def analyze_decision(text):
 
 
 
-def get_decision(text):
+def choose_best(
+
+        options
+
+):
 
 
-    return analyze_decision(
-        text
+    if not options:
+
+
+        return None
+
+
+
+    best = max(
+
+        options,
+
+        key=lambda x: x.get(
+
+            "score",
+
+            0
+
+        )
+
+    )
+
+
+
+    return best
+
+
+
+
+
+
+
+def save_decision_result(
+
+        decision_id,
+
+        selected
+
+):
+
+
+    if decision_id in DECISIONS:
+
+
+        DECISIONS[decision_id]["selected"] = selected
+
+
+        DECISIONS[decision_id]["completed"] = str(
+
+            datetime.datetime.now()
+
+        )
+
+
+        return True
+
+
+
+    return False
+
+
+
+
+
+
+
+def get_decisions(
+
+        question=None
+
+):
+
+
+    if question:
+
+
+        result = []
+
+
+
+        for decision in DECISIONS.values():
+
+
+            if question.lower() in decision["question"].lower():
+
+
+                result.append(
+
+                    decision
+
+                )
+
+
+
+        return result
+
+
+
+
+
+    return list(
+
+        DECISIONS.values()
+
     )
 
 
@@ -177,13 +228,19 @@ def get_decision(text):
 
 
 
-
-def get_decisions(text):
-
-
-    result = analyze_decision(
-        text
-    )
+def decision_status():
 
 
-    return result
+    return {
+
+
+        "decisions":
+
+        len(DECISIONS),
+
+
+        "status":
+
+        "active"
+
+        }

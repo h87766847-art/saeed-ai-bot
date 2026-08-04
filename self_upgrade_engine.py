@@ -1,5 +1,5 @@
 # self_upgrade_engine.py
-# Saeed Core v7.5
+# Saeed Core v7.6
 # Secure Self Upgrade System
 
 
@@ -33,8 +33,7 @@ except Exception:
 
 
 
-UPGRADES = {}
-
+UPGRADE_LOG = {}
 
 
 
@@ -44,32 +43,27 @@ UPGRADES = {}
 
 def request_upgrade(
 
-        name,
+        filename,
 
-        description
+        description=""
 
 ):
 
 
     upgrade_id = len(
 
-        UPGRADES
+        UPGRADE_LOG
 
     ) + 1
 
 
 
-    UPGRADES[upgrade_id] = {
+    UPGRADE_LOG[upgrade_id] = {
 
 
-        "id":
+        "file":
 
-        upgrade_id,
-
-
-        "name":
-
-        name,
+        filename,
 
 
         "description":
@@ -94,42 +88,7 @@ def request_upgrade(
 
 
 
-    return UPGRADES[upgrade_id]
-
-
-
-
-
-
-
-
-
-def check_upgrade_file(
-
-        filename
-
-):
-
-
-    if verify_file:
-
-
-        return verify_file(
-
-            filename
-
-        )
-
-
-
-    return {
-
-
-        "safe":
-
-        True
-
-    }
+    return UPGRADE_LOG[upgrade_id]
 
 
 
@@ -146,42 +105,60 @@ def prepare_upgrade(
 ):
 
 
-    security = check_upgrade_file(
+    result = {
+
+
+        "file":
 
         filename
 
-    )
+    }
 
 
 
-    if not security.get(
-
-        "safe",
-
-        False
-
-    ):
 
 
-        return {
+    if verify_file:
 
 
-            "status":
-
-            "blocked",
+        try:
 
 
-            "reason":
+            security = verify_file(
 
-            security.get(
-
-                "issues",
-
-                []
+                filename
 
             )
 
-        }
+
+            if not security.get(
+
+                "safe",
+
+                False
+
+            ):
+
+
+                return {
+
+
+                    "status":
+
+                    "blocked",
+
+
+                    "reason":
+
+                    security
+
+                }
+
+
+        except Exception:
+
+            pass
+
 
 
 
@@ -193,35 +170,30 @@ def prepare_upgrade(
 
         try:
 
-            create_backup(
+
+            result["backup"] = create_backup(
 
                 filename
 
             )
 
+
         except Exception:
 
-            pass
+
+            result["backup"] = None
 
 
 
 
 
 
-    return {
+
+    result["status"] = "ready"
 
 
-        "status":
 
-        "ready",
-
-
-        "file":
-
-        filename
-
-    }
-
+    return result
 
 
 
@@ -236,10 +208,10 @@ def complete_upgrade(
 ):
 
 
-    if upgrade_id in UPGRADES:
+    if upgrade_id in UPGRADE_LOG:
 
 
-        UPGRADES[upgrade_id]["status"] = "completed"
+        UPGRADE_LOG[upgrade_id]["status"] = "completed"
 
 
         return True
@@ -254,10 +226,10 @@ def complete_upgrade(
 
 
 
-def get_upgrades():
+def get_upgrade_history():
 
 
-    return UPGRADES
+    return UPGRADE_LOG
 
 
 
@@ -271,11 +243,11 @@ def upgrade_status():
     return {
 
 
-        "upgrades":
+        "total":
 
         len(
 
-            UPGRADES
+            UPGRADE_LOG
 
         ),
 
@@ -284,4 +256,4 @@ def upgrade_status():
 
         "secure"
 
-            }
+    }

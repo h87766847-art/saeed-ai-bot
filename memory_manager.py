@@ -1,116 +1,197 @@
+# memory_manager.py
+# Saeed Core v6.3
+# Smart Memory Manager
+
+
 import sqlite3
-import os
-from datetime import datetime
+import datetime
 
 
-DB_NAME = "saeed_memory.db"
+DATABASE = "saeed_memory.db"
+
+
+
+
+
+def connect():
+
+    return sqlite3.connect(DATABASE)
+
+
+
 
 
 def init_memory_manager():
-    """
-    Initialize memory database
-    """
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
 
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS memories (
+    conn = connect()
+    cursor = conn.cursor()
+
+
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS memories(
+
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             content TEXT,
+
             category TEXT,
-            created_at TEXT
+
+            importance INTEGER,
+
+            time TEXT
+
         )
-        """)
-
-        conn.commit()
-        conn.close()
-
-        print("Memory Manager initialized")
-        return True
-
-    except Exception as e:
-        print("Memory init error:", e)
-        return False
+    """)
 
 
 
-def add_memory(content, category="general"):
+    conn.commit()
+    conn.close()
+
+
+
+
+
+def add_memory(
+        content,
+        category="general",
+        importance=1
+):
+
+
     try:
-        conn = sqlite3.connect(DB_NAME)
+
+        conn = connect()
         cursor = conn.cursor()
+
+
 
         cursor.execute(
             """
-            INSERT INTO memories
-            (content, category, created_at)
-            VALUES (?, ?, ?)
-            """,
-            (
+            INSERT INTO memories(
                 content,
                 category,
-                str(datetime.now())
+                importance,
+                time
+            )
+
+            VALUES (?,?,?,?)
+            """,
+
+            (
+
+                content,
+
+                category,
+
+                importance,
+
+                str(datetime.datetime.now())
+
             )
         )
 
+
+
         conn.commit()
         conn.close()
 
+
+
         return True
 
+
+
     except Exception as e:
-        print("Add memory error:", e)
+
+
+        print(
+            "Add memory error:",
+            e
+        )
+
+
         return False
 
 
 
-def get_memories(limit=10):
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT content, category
-            FROM memories
-            ORDER BY id DESC
-            LIMIT ?
-            """,
-            (limit,)
+
+
+
+def get_all_memories():
+
+
+    conn = connect()
+    cursor = conn.cursor()
+
+
+
+    cursor.execute(
+        """
+        SELECT *
+
+        FROM memories
+
+        ORDER BY importance DESC
+        """
+    )
+
+
+
+    result = cursor.fetchall()
+
+
+
+    conn.close()
+
+
+
+    return result
+
+
+
+
+
+
+
+def get_best_memory(keyword):
+
+
+    conn = connect()
+    cursor = conn.cursor()
+
+
+
+    cursor.execute(
+
+        """
+        SELECT content
+
+        FROM memories
+
+        WHERE content LIKE ?
+
+        ORDER BY importance DESC
+
+        LIMIT 5
+        """,
+
+        (
+            "%" + keyword + "%",
         )
 
-        data = cursor.fetchall()
-
-        conn.close()
-
-        return data
-
-    except Exception as e:
-        print("Read memory error:", e)
-        return []
+    )
 
 
 
-def search_memory(keyword):
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
+    result = cursor.fetchall()
 
-        cursor.execute(
-            """
-            SELECT content, category
-            FROM memories
-            WHERE content LIKE ?
-            """,
-            (f"%{keyword}%",)
-        )
 
-        result = cursor.fetchall()
 
-        conn.close()
+    conn.close()
 
-        return result
 
-    except Exception as e:
-        print("Search memory error:", e)
-        return []
+
+    return result

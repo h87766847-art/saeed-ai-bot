@@ -1,71 +1,74 @@
 # brain.py
 # Saeed Core
-# Advanced Brain Engine
+# Central Intelligence Brain System
 
 
-import sqlite3
 import datetime
-import json
-import traceback
 
 
+# اتصال امن به سیستم‌ها
 
-from memory_manager import (
-    init_memory_manager,
-    add_memory,
-    get_best_memory
-)
-
-
-from memory_intelligence import (
-    analyze_memory,
-    extract_information
-)
-
-
-from context_intelligence import (
-    detect_context
-)
-
-
-from personality_engine import (
-    get_personality,
-    add_personality
-)
-
-
-from emotion_engine import (
-    detect_emotion
-)
-
-
-from decision_intelligence import (
-    get_decision
-)
-
-
-
-DATABASE = "saeed_memory.db"
-
-
-
-# -----------------------------
-# Initialization
-# -----------------------------
-
-
-init_memory_manager()
-
-
-
-
-
-
-def connect():
-
-    return sqlite3.connect(
-        DATABASE
+try:
+    from memory_manager import (
+        add_memory,
+        get_best_memory
     )
+except Exception:
+    add_memory = None
+    get_best_memory = None
+
+
+try:
+    from context_intelligence import (
+        detect_context
+    )
+except Exception:
+    detect_context = None
+
+
+try:
+    from intent_engine import (
+        detect_intent
+    )
+except Exception:
+    detect_intent = None
+
+
+try:
+    from learning_engine import (
+        add_experience
+    )
+except Exception:
+    add_experience = None
+
+
+try:
+    from event_engine import (
+        emit_event
+    )
+except Exception:
+    emit_event = None
+
+
+try:
+    from identity_engine import (
+        get_identity
+    )
+except Exception:
+    get_identity = None
+
+
+
+
+
+BRAIN_VERSION = "7.0"
+
+
+
+
+
+CONVERSATIONS = []
+
 
 
 
@@ -75,116 +78,12 @@ def connect():
 
 def init_database():
 
-    conn = connect()
+    """
+    سازگاری با فایل‌های قدیمی
+    """
 
-    cursor = conn.cursor()
+    return True
 
-
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS brain_logs(
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        input TEXT,
-
-        output TEXT,
-
-        data TEXT,
-
-        time TEXT
-
-    )
-    """)
-
-
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS conversations(
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        user TEXT,
-
-        assistant TEXT,
-
-        time TEXT
-
-    )
-    """)
-
-
-
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-
-
-# -----------------------------
-# Logging
-# -----------------------------
-
-
-def save_log(
-        user_input,
-        output,
-        data
-):
-
-    try:
-
-        conn = connect()
-
-        cursor = conn.cursor()
-
-
-
-        cursor.execute(
-        """
-        INSERT INTO brain_logs
-        (
-        input,
-        output,
-        data,
-        time
-        )
-
-        VALUES (?,?,?,?)
-        """,
-
-        (
-
-        user_input,
-
-        output,
-
-        json.dumps(
-            data,
-            ensure_ascii=False
-        ),
-
-        str(
-            datetime.datetime.now()
-        )
-
-        ))
-
-
-
-        conn.commit()
-
-        conn.close()
-
-
-
-    except Exception:
-
-        traceback.print_exc()
 
 
 
@@ -193,253 +92,143 @@ def save_log(
 
 
 def save_conversation(
-        user,
-        assistant
+
+        user_text,
+
+        response
+
 ):
 
-    try:
 
-        conn = connect()
+    data = {
 
-        cursor = conn.cursor()
+        "user":
+
+        user_text,
 
 
-        cursor.execute(
-        """
-        INSERT INTO conversations
-        (
-        user,
-        assistant,
-        time
-        )
+        "response":
 
-        VALUES (?,?,?)
-        """,
+        response,
 
-        (
 
-        user,
-
-        assistant,
+        "time":
 
         str(
+
             datetime.datetime.now()
-        )
-
-        ))
-
-
-        conn.commit()
-
-        conn.close()
-
-
-
-    except Exception:
-
-        traceback.print_exc()
-
-
-
-
-
-
-
-
-# -----------------------------
-# Memory
-# -----------------------------
-
-
-def remember(
-        text,
-        importance=5
-):
-
-    try:
-
-        add_memory(
-
-            text,
-
-            category="brain",
-
-            importance=importance
 
         )
 
-
-        return True
-
+    }
 
 
-    except Exception:
+    CONVERSATIONS.append(
 
-        return False
+        data
+
+    )
 
 
-
-
-
+    return data
 
 
 
-# -----------------------------
-# Main Brain
-# -----------------------------
 
 
-def process_brain(
-        text,
-        context=None,
-        memory=None,
-        plans=None,
-        decisions=None
+
+
+def remember_important_information(
+
+        information
+
 ):
 
 
-    result = {}
+    if add_memory:
 
 
+        try:
 
-    try:
+            return add_memory(
 
-
-        result["input"] = text
-
-
-
-        # Context
-
-        result["context"] = detect_context(
-            text
-        )
-
-
-
-        # Emotion
-
-        result["emotion"] = detect_emotion(
-            text
-        )
-
-
-
-        # Decision
-
-        result["decision"] = get_decision(
-            text
-        )
-
-
-
-        # Memory analysis
-
-        memory_info = analyze_memory(
-            text
-        )
-
-
-        result["memory_analysis"] = memory_info
-
-
-
-
-        # Extract information
-
-        result["information"] = extract_information(
-            text
-        )
-
-
-
-
-        # Important memory save
-
-        if memory_info.get(
-            "important",
-            False
-        ):
-
-
-            remember(
-                text,
-
-                memory_info.get(
-                    "importance_score",
-                    5
-                )
+                information
 
             )
 
+        except Exception:
+
+            pass
 
 
-
-
-        # Related memories
-
-        result["related_memory"] = get_best_memory(
-            text
-        )
-
-
-
-
-
-        # Personality
-
-        result["personality"] = get_personality()
+    return False
 
 
 
 
 
-        # Internal response layer
-
-        response = add_personality(
-            "درخواست شما پردازش شد."
-        )
 
 
+def analyze_input(
 
-        result["response"] = response
+        text
 
-
-
-        result["status"] = "success"
-
+):
 
 
-
-    except Exception as e:
-
-
-        result = {
-
-            "status": "error",
-
-            "error": str(e),
-
-            "trace":
-            traceback.format_exc()
-
-        }
+    result = {
 
 
-
-
-    save_log(
+        "text":
 
         text,
 
-        result.get(
-            "response",
-            ""
-        ),
 
-        result
+        "time":
 
-    )
+        str(
+
+            datetime.datetime.now()
+
+        )
+
+    }
+
+
+
+    if detect_context:
+
+
+        try:
+
+            result["context"] = detect_context(
+
+                text
+
+            )
+
+        except Exception:
+
+            result["context"] = None
+
+
+
+
+    if detect_intent:
+
+
+        try:
+
+            result["intent"] = detect_intent(
+
+                text
+
+            )
+
+        except Exception:
+
+            result["intent"] = None
+
 
 
 
@@ -451,6 +240,134 @@ def process_brain(
 
 
 
-# Start database
+def process_brain(
 
-init_database()
+        text
+
+):
+
+
+    analysis = analyze_input(
+
+        text
+
+    )
+
+
+
+    if add_experience:
+
+
+        try:
+
+            add_experience(
+
+                text,
+
+                "processing",
+
+                "completed",
+
+                1
+
+            )
+
+        except Exception:
+
+            pass
+
+
+
+
+    if emit_event:
+
+
+        try:
+
+            emit_event(
+
+                "brain_processed",
+
+                analysis
+
+            )
+
+        except Exception:
+
+            pass
+
+
+
+
+    response = {
+
+
+        "status":
+
+        "success",
+
+
+        "version":
+
+        BRAIN_VERSION,
+
+
+        "analysis":
+
+        analysis,
+
+
+        "message":
+
+        "Request processed by Saeed Core"
+
+    }
+
+
+
+
+
+    save_conversation(
+
+        text,
+
+        response
+
+    )
+
+
+
+    return response
+
+
+
+
+
+
+
+def get_brain_status():
+
+
+    return {
+
+
+        "name":
+
+        "Saeed Brain",
+
+
+        "version":
+
+        BRAIN_VERSION,
+
+
+        "conversations":
+
+        len(CONVERSATIONS),
+
+
+        "status":
+
+        "online"
+
+    }

@@ -1,12 +1,73 @@
-from long_term_memory import (
-    init_long_memory,
-    save_long_memory,
-    get_important_memories
-)
+# memory_intelligence.py
+# Saeed AI v2.2
+# Smart Memory Analyzer
+
+
+import datetime
 
 
 
-init_long_memory()
+
+
+def detect_memory_type(text):
+
+
+    text = text.lower()
+
+
+
+    if (
+        "من" in text
+        or
+        "هستم" in text
+        or
+        "دارم" in text
+    ):
+
+        return "user"
+
+
+
+    if (
+        "پروژه" in text
+        or
+        "ساخت" in text
+        or
+        "برنامه" in text
+    ):
+
+        return "projects"
+
+
+
+    if (
+        "دوست دارم" in text
+        or
+        "علاقه" in text
+        or
+        "عاشق" in text
+    ):
+
+        return "preferences"
+
+
+
+    if (
+        "هدف" in text
+        or
+        "میخواهم" in text
+        or
+        "می‌خواهم" in text
+    ):
+
+        return "goals"
+
+
+
+    return "general"
+
+
+
 
 
 
@@ -18,27 +79,27 @@ def calculate_importance(text):
     score = 1
 
 
+
     important_words = [
 
         "هدف",
 
         "پروژه",
 
-        "میخواهم",
-
-        "می‌خواهم",
-
-        "همیشه",
+        "علاقه",
 
         "دوست دارم",
 
-        "برنامه",
+        "میخواهم",
 
-        "زندگی",
+        "کار",
 
-        "کار"
+        "یادگیری",
+
+        "تخصص"
 
     ]
+
 
 
 
@@ -47,19 +108,28 @@ def calculate_importance(text):
 
         if word in text:
 
+
             score += 1
 
 
 
-    if len(text) > 100:
 
-        score += 2
+
+    if len(text) > 50:
+
+
+        score += 1
+
+
 
 
 
     if score > 10:
 
+
         score = 10
+
+
 
 
 
@@ -70,68 +140,44 @@ def calculate_importance(text):
 
 
 
+
+
+
 def analyze_memory(text):
 
 
-    importance = calculate_importance(
+    memory_type = detect_memory_type(
+
         text
+
     )
 
 
 
-    if importance >= 5:
+    importance = calculate_importance(
 
+        text
 
-        category = "important"
-
-
-
-        save_long_memory(
-
-            category,
-
-            text,
-
-            importance
-
-        )
-
-
-        return True
-
-
-
-    return False
+    )
 
 
 
 
+    return {
 
 
-def get_memory_context():
+        "type": memory_type,
 
 
-    memories = get_important_memories()
+        "importance": importance,
 
 
-
-    context = ""
-
+        "content": text,
 
 
-    for category, content in memories:
+        "time":
+
+        str(datetime.datetime.now())
 
 
-        context += (
-
-            content
-
-            +
-
-            "\n"
-
-        )
-
-
-
-    return context
+    }

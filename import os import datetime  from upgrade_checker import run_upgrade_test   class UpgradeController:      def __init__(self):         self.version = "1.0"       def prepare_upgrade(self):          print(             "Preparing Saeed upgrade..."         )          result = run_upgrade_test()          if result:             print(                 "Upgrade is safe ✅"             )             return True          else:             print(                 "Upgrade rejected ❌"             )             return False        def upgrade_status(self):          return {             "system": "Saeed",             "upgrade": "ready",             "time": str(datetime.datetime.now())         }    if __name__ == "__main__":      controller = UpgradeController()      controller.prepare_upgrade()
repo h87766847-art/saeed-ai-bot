@@ -1,0 +1,49 @@
+import os
+import datetime
+
+from upgrade_checker import run_upgrade_test
+
+
+class UpgradeController:
+
+    def __init__(self):
+        self.version = "1.0"
+
+
+    def prepare_upgrade(self):
+
+        print(
+            "Preparing Saeed upgrade..."
+        )
+
+        result = run_upgrade_test()
+
+        if result:
+            print(
+                "Upgrade is safe ✅"
+            )
+            return True
+
+        else:
+            print(
+                "Upgrade rejected ❌"
+            )
+            return False
+
+
+
+    def upgrade_status(self):
+
+        return {
+            "system": "Saeed",
+            "upgrade": "ready",
+            "time": str(datetime.datetime.now())
+        }
+
+
+
+if __name__ == "__main__":
+
+    controller = UpgradeController()
+
+    controller.prepare_upgrade()

@@ -1,6 +1,6 @@
 # brain.py
-# Saeed Core v6.4
-# Smart Brain Intelligence
+# Saeed Core v6.5
+# Smart Brain + Personality + Emotion
 
 
 import sqlite3
@@ -24,14 +24,23 @@ from context_intelligence import (
 )
 
 
+from personality_engine import (
+    get_personality,
+    add_personality
+)
+
+
+from emotion_engine import (
+    detect_emotion,
+    get_emotion_response
+)
+
+
 
 DATABASE = "saeed_memory.db"
 
 
 
-
-
-# شروع سیستم حافظه
 
 init_memory_manager()
 
@@ -50,13 +59,11 @@ def connect():
 
 
 
-
 def init_database():
 
     conn = connect()
 
     cursor = conn.cursor()
-
 
 
     cursor.execute("""
@@ -89,24 +96,9 @@ def init_database():
 
 
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS important_information(
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-            information TEXT,
-
-            time TEXT
-
-        )
-    """)
-
-
-
     conn.commit()
 
     conn.close()
-
 
 
 
@@ -122,30 +114,24 @@ def save_brain_log(text):
         cursor = conn.cursor()
 
 
-
         cursor.execute(
             """
             INSERT INTO brain_logs(
                 message,
                 time
             )
-
             VALUES (?,?)
             """,
-
             (
                 text,
                 str(datetime.datetime.now())
             )
-
         )
-
 
 
         conn.commit()
 
         conn.close()
-
 
 
     except Exception as e:
@@ -173,7 +159,6 @@ def save_conversation(
         cursor = conn.cursor()
 
 
-
         cursor.execute(
             """
             INSERT INTO conversations(
@@ -181,24 +166,19 @@ def save_conversation(
                 assistant,
                 time
             )
-
             VALUES (?,?,?)
             """,
-
             (
                 user_text,
                 assistant_text,
                 str(datetime.datetime.now())
             )
-
         )
-
 
 
         conn.commit()
 
         conn.close()
-
 
 
     except Exception as e:
@@ -231,15 +211,12 @@ def remember_important_information(
         return True
 
 
-
     except Exception as e:
 
-
         print(
-            "Important memory error:",
+            "Memory error:",
             e
         )
-
 
         return False
 
@@ -262,7 +239,9 @@ def process_brain(
 
     try:
 
-        detected_context = detect_context(text)
+        detected_context = detect_context(
+            text
+        )
 
     except Exception:
 
@@ -272,34 +251,28 @@ def process_brain(
 
 
 
-    # تحلیل اهمیت حافظه
+    # تشخیص احساس
 
-    try:
-
-        memory_analysis = analyze_memory(text)
-
-    except Exception:
-
-        memory_analysis = {
-
-            "important": False,
-
-            "importance_score": 0
-
-        }
+    emotion = detect_emotion(
+        text
+    )
 
 
 
 
 
+    # حافظه
+
+    memory_analysis = analyze_memory(
+        text
+    )
 
 
-    # اگر مهم بود ذخیره کن
+
 
     if memory_analysis.get(
         "important"
     ):
-
 
         remember_important_information(
             text
@@ -309,17 +282,31 @@ def process_brain(
 
 
 
-    # استخراج اطلاعات
+    information = extract_information(
+        text
+    )
 
-    try:
 
-        extracted = extract_information(
-            text
-        )
 
-    except Exception:
 
-        extracted = {}
+
+    personality = get_personality()
+
+
+
+
+
+    emotional_reply = get_emotion_response(
+        emotion["emotion"]
+    )
+
+
+
+
+
+    response = add_personality(
+        emotional_reply
+    )
 
 
 
@@ -334,10 +321,20 @@ def process_brain(
 
 
 
+
     return {
 
 
         "input": text,
+
+
+        "response": response,
+
+
+        "personality": personality,
+
+
+        "emotion": emotion,
 
 
         "context": detected_context,
@@ -346,7 +343,7 @@ def process_brain(
         "memory": memory_analysis,
 
 
-        "information": extracted,
+        "information": information,
 
 
         "plans": plans,
@@ -369,7 +366,5 @@ def process_brain(
 
 
 
-
-# ساخت دیتابیس
 
 init_database()

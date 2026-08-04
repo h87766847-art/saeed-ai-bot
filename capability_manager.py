@@ -1,11 +1,14 @@
 # capability_manager.py
-# Saeed Core
-# Advanced Capability Management System
+# Saeed Core v7.5
+# Capability Management System
 
 
 import datetime
 import json
 import os
+
+
+
 
 
 CAPABILITY_FILE = "saeed_capabilities.json"
@@ -17,23 +20,48 @@ CAPABILITIES = {}
 
 
 
+
+
 def load_capabilities():
 
 
     global CAPABILITIES
 
 
-    if os.path.exists(CAPABILITY_FILE):
+
+    if os.path.exists(
+
+        CAPABILITY_FILE
+
+    ):
 
 
-        with open(
-            CAPABILITY_FILE,
-            "r",
-            encoding="utf-8"
-        ) as file:
+        try:
 
 
-            CAPABILITIES = json.load(file)
+            with open(
+
+                CAPABILITY_FILE,
+
+                "r",
+
+                encoding="utf-8"
+
+            ) as file:
+
+
+                CAPABILITIES = json.load(
+
+                    file
+
+                )
+
+
+
+        except Exception:
+
+
+            CAPABILITIES = {}
 
 
 
@@ -44,22 +72,34 @@ def load_capabilities():
 
 
 
+
 def save_capabilities():
 
 
     with open(
+
         CAPABILITY_FILE,
+
         "w",
+
         encoding="utf-8"
+
     ) as file:
 
 
         json.dump(
+
             CAPABILITIES,
+
             file,
+
             ensure_ascii=False,
+
             indent=4
+
         )
+
+
 
 
 
@@ -92,13 +132,17 @@ def add_capability(
         "created":
 
         str(
+
             datetime.datetime.now()
+
         )
 
     }
 
 
+
     save_capabilities()
+
 
 
     return True
@@ -176,6 +220,27 @@ def get_capabilities():
 
 
 
+def get_active_capabilities():
+
+
+    return [
+
+        item
+
+        for item in CAPABILITIES.values()
+
+        if item["enabled"]
+
+    ]
+
+
+
+
+
+
+
+
+
 def capability_status():
 
 
@@ -191,22 +256,18 @@ def capability_status():
 
         len(
 
-            [
-
-            x for x in CAPABILITIES.values()
-
-            if x["enabled"]
-
-            ]
+            get_active_capabilities()
 
         ),
 
 
         "status":
 
-        "ready"
+        "online"
 
     }
+
+
 
 
 

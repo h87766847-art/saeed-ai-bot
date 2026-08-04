@@ -1,11 +1,12 @@
 # memory_manager.py
-# Saeed Core
+# Saeed Core v7.0
 # Advanced Memory Management System
 
 
 import sqlite3
 import datetime
-import json
+
+
 
 
 
@@ -15,12 +16,16 @@ DATABASE = "saeed_memory.db"
 
 
 
+
+
 def connect():
 
-    return sqlite3.connect(
-        DATABASE
-    )
 
+    return sqlite3.connect(
+
+        DATABASE
+
+    )
 
 
 
@@ -31,38 +36,41 @@ def connect():
 def init_memory_manager():
 
 
-    conn = connect()
+    db = connect()
 
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
 
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS memories(
+    cursor.execute(
 
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        """
 
-        content TEXT,
+        CREATE TABLE IF NOT EXISTS memories
 
-        category TEXT,
+        (
 
-        importance INTEGER DEFAULT 1,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-        tags TEXT,
+            content TEXT,
 
-        created TEXT,
+            category TEXT,
 
-        accessed INTEGER DEFAULT 0
+            importance INTEGER,
+
+            created TEXT
+
+        )
+
+        """
 
     )
-    """)
 
 
 
+    db.commit()
 
-    conn.commit()
-
-    conn.close()
+    db.close()
 
 
 
@@ -76,124 +84,103 @@ def add_memory(
 
         category="general",
 
-        importance=1,
-
-        tags=None
+        importance=5
 
 ):
 
 
-    try:
+    db = connect()
 
-
-        conn = connect()
-
-        cursor = conn.cursor()
-
-
-
-        if tags is None:
-
-            tags = []
-
-
-
-
-        cursor.execute(
-
-        """
-        INSERT INTO memories
-
-        (
-        content,
-        category,
-        importance,
-        tags,
-        created
-        )
-
-        VALUES (?,?,?,?,?)
-
-        """,
-
-        (
-
-        content,
-
-        category,
-
-        importance,
-
-        json.dumps(
-            tags,
-            ensure_ascii=False
-        ),
-
-        str(
-            datetime.datetime.now()
-        )
-
-        ))
-
-
-
-
-
-        conn.commit()
-
-        conn.close()
-
-
-
-        return True
-
-
-
-    except Exception as e:
-
-
-        print(
-            "Memory save error:",
-            e
-        )
-
-
-        return False
-
-
-
-
-
-
-
-def get_all_memories():
-
-
-    conn = connect()
-
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
 
 
     cursor.execute(
 
-    """
-    SELECT *
+        """
 
-    FROM memories
+        INSERT INTO memories
 
-    ORDER BY importance DESC
+        (
 
-    """
+            content,
+
+            category,
+
+            importance,
+
+            created
+
+        )
+
+        VALUES (?, ?, ?, ?)
+
+        """,
+
+        (
+
+            content,
+
+            category,
+
+            importance,
+
+            str(
+
+                datetime.datetime.now()
+
+            )
+
+        )
 
     )
+
+
+
+    db.commit()
+
+    db.close()
+
+
+
+    return True
+
+
+
+
+
+
+
+def get_all_memory():
+
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+
+    cursor.execute(
+
+        """
+
+        SELECT *
+
+        FROM memories
+
+        ORDER BY importance DESC
+
+        """
+
+    )
+
 
 
     result = cursor.fetchall()
 
 
 
-    conn.close()
+    db.close()
 
 
 
@@ -207,42 +194,40 @@ def get_all_memories():
 
 def get_best_memory(
 
-        keyword,
-
-        limit=10
+        query
 
 ):
 
 
-    conn = connect()
+    db = connect()
 
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
 
 
     cursor.execute(
 
-    """
+        """
 
-    SELECT content
+        SELECT *
 
-    FROM memories
+        FROM memories
 
-    WHERE content LIKE ?
+        WHERE content LIKE ?
 
-    ORDER BY importance DESC
+        ORDER BY importance DESC
 
-    LIMIT ?
+        LIMIT 10
 
-    """,
+        """,
 
-    (
+        (
 
-    "%" + keyword + "%",
+            "%" + query + "%",
 
-    limit
+        )
 
-    ))
+    )
 
 
 
@@ -250,7 +235,7 @@ def get_best_memory(
 
 
 
-    conn.close()
+    db.close()
 
 
 
@@ -269,109 +254,89 @@ def delete_memory(
 ):
 
 
-    conn = connect()
+    db = connect()
 
-    cursor = conn.cursor()
-
-
-
-    cursor.execute(
-
-    """
-
-    DELETE FROM memories
-
-    WHERE id=?
-
-    """,
-
-    (
-
-    memory_id,
-
-    ))
-
-
-
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-
-def increase_memory_usage(
-
-        memory_id
-
-):
-
-
-    conn = connect()
-
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
 
 
     cursor.execute(
 
-    """
+        """
 
-    UPDATE memories
+        DELETE FROM memories
 
-    SET accessed = accessed + 1
+        WHERE id=?
 
-    WHERE id=?
+        """,
 
-    """,
+        (
 
-    (
+            memory_id,
 
-    memory_id,
-
-    ))
-
-
-
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-
-def search_memory(
-
-        text
-
-):
-
-
-    words = text.split()
-
-
-
-    results = []
-
-
-
-    for word in words:
-
-
-        found = get_best_memory(
-            word,
-            5
         )
 
-
-        results.extend(
-            found
-        )
+    )
 
 
 
-    return results
+    db.commit()
+
+    db.close()
+
+
+
+    return True
+
+
+
+
+
+
+
+def memory_status():
+
+
+    db = connect()
+
+    cursor = db.cursor()
+
+
+
+    cursor.execute(
+
+        "SELECT COUNT(*) FROM memories"
+
+    )
+
+
+
+    count = cursor.fetchone()[0]
+
+
+
+    db.close()
+
+
+
+    return {
+
+
+        "memories":
+
+        count,
+
+
+        "status":
+
+        "active"
+
+    }
+
+
+
+
+
+
+
+init_memory_manager()

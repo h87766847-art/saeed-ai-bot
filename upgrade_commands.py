@@ -1,6 +1,7 @@
 # upgrade_commands.py
-# Saeed Core v8.3
-# Telegram Upgrade Control
+# Saeed Core v9.9
+# Upgrade Command Controller
+
 
 
 from version_manager import (
@@ -8,15 +9,19 @@ from version_manager import (
 )
 
 
+
 from auto_upgrade_agent import (
-    check_upgrade_status,
-    start_auto_upgrade
+    check_upgrade_status
 )
 
 
-from upgrade_bootstrap import (
-    get_boot_status
+
+from safe_upgrade_commands import (
+    command_safe_upgrade_start,
+    command_safe_upgrade_status
 )
+
+
 
 
 
@@ -29,14 +34,14 @@ def command_version():
     return {
 
 
-        "version":
-
-        current_version(),
-
-
         "system":
 
-        "Saeed Core"
+        "Saeed Core",
+
+
+        "version":
+
+        current_version()
 
     }
 
@@ -59,10 +64,14 @@ def command_upgrade_check():
 
 
 
+
+
 def command_upgrade_start():
 
 
-    return start_auto_upgrade()
+    return command_safe_upgrade_start()
+
+
 
 
 
@@ -73,16 +82,4 @@ def command_upgrade_start():
 def command_upgrade_status():
 
 
-    return {
-
-
-        "bootstrap":
-
-        get_boot_status(),
-
-
-        "version":
-
-        current_version()
-
-    }
+    return command_safe_upgrade_status()

@@ -1,6 +1,6 @@
 # event_engine.py
-# Saeed Core
-# Advanced Event Management System
+# Saeed Core v7.5
+# Central Event System
 
 
 import datetime
@@ -10,41 +10,8 @@ import uuid
 
 
 
-EVENT_HANDLERS = {}
+EVENTS = {}
 
-EVENT_HISTORY = {}
-
-
-
-
-
-
-
-def register_event(
-
-        event_name,
-
-        handler
-
-):
-
-
-    if event_name not in EVENT_HANDLERS:
-
-
-        EVENT_HANDLERS[event_name] = []
-
-
-
-    EVENT_HANDLERS[event_name].append(
-
-        handler
-
-    )
-
-
-
-    return True
 
 
 
@@ -54,7 +21,7 @@ def register_event(
 
 def emit_event(
 
-        event_name,
+        name,
 
         data=None
 
@@ -69,7 +36,7 @@ def emit_event(
 
 
 
-    event = {
+    EVENTS[event_id] = {
 
 
         "id":
@@ -79,7 +46,7 @@ def emit_event(
 
         "name":
 
-        event_name,
+        name,
 
 
         "data":
@@ -99,94 +66,70 @@ def emit_event(
 
 
 
-    EVENT_HISTORY[event_id] = event
+    return EVENTS[event_id]
 
 
 
-    handlers = EVENT_HANDLERS.get(
 
-        event_name,
 
-        []
+
+
+
+
+def get_events(
+
+        name=None
+
+):
+
+
+    if name:
+
+
+        return [
+
+            event
+
+            for event in EVENTS.values()
+
+            if event["name"] == name
+
+        ]
+
+
+
+
+
+    return list(
+
+        EVENTS.values()
 
     )
 
 
 
-    results = []
-
-
-
-    for handler in handlers:
-
-
-        try:
-
-
-            result = handler(
-
-                data
-
-            )
-
-
-            results.append(
-
-                result
-
-            )
-
-
-
-        except Exception as e:
-
-
-            results.append(
-
-                str(e)
-
-            )
-
-
-
-    return {
-
-
-        "event":
-
-        event,
-
-
-        "results":
-
-        results
-
-    }
 
 
 
 
 
 
+def last_events(
 
-
-
-def get_event_history(
-
-        limit=50
+        count=10
 
 ):
 
 
     events = list(
 
-        EVENT_HISTORY.values()
+        EVENTS.values()
 
     )
 
 
 
-    return events[-limit:]
+    return events[-count:]
 
 
 
@@ -195,33 +138,15 @@ def get_event_history(
 
 
 
-def remove_event_handler(
 
-        event_name,
-
-        handler
-
-):
+def clear_events():
 
 
-    if event_name in EVENT_HANDLERS:
-
-
-        if handler in EVENT_HANDLERS[event_name]:
-
-
-            EVENT_HANDLERS[event_name].remove(
-
-                handler
-
-            )
-
-
-            return True
+    EVENTS.clear()
 
 
 
-    return False
+    return True
 
 
 
@@ -235,18 +160,17 @@ def event_status():
     return {
 
 
-        "events":
+        "total":
 
-        len(EVENT_HISTORY),
+        len(
 
+            EVENTS
 
-        "types":
-
-        len(EVENT_HANDLERS),
+        ),
 
 
         "status":
 
-        "online"
+        "active"
 
     }

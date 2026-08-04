@@ -1,3 +1,8 @@
+# brain.py
+# Saeed Core v6.3
+# Brain Intelligence Module
+
+
 import sqlite3
 import datetime
 
@@ -18,334 +23,89 @@ from context_intelligence import (
 )
 
 
-
-
-
 DATABASE = "saeed_memory.db"
 
 
 
-
-
+# شروع مدیریت حافظه
 init_memory_manager()
 
 
 
-
-
-
 def connect():
-
-    return sqlite3.connect(
-        DATABASE
-    )
+    return sqlite3.connect(DATABASE)
 
 
 
+def save_brain_log(text):
 
+    try:
+        conn = connect()
+        cursor = conn.cursor()
 
-
-
-def init_database():
-
-    db = connect()
-
-    cursor = db.cursor()
-
-
-
-    cursor.execute("""
-
-    CREATE TABLE IF NOT EXISTS conversations (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        role TEXT,
-
-        content TEXT,
-
-        time TEXT
-
-    )
-
-    """)
-
-
-
-    db.commit()
-
-    db.close()
-
-
-
-
-
-
-
-def save_conversation(role, content):
-
-
-    db = connect()
-
-    cursor = db.cursor()
-
-
-
-    cursor.execute(
-
-        """
-
-        INSERT INTO conversations
-
-        (
-        role,
-        content,
-        time
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS brain_logs(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                message TEXT,
+                time TEXT
+            )
+            """
         )
 
-        VALUES (?,?,?)
-
-        """,
-
-        (
-
-            role,
-
-            content,
-
-            str(datetime.datetime.now())
-
+        cursor.execute(
+            """
+            INSERT INTO brain_logs(message,time)
+            VALUES (?,?)
+            """,
+            (
+                text,
+                str(datetime.datetime.now())
+            )
         )
 
-    )
+        conn.commit()
+        conn.close()
 
+    except Exception as e:
+        print("Brain log error:", e)
 
 
-    db.commit()
 
-    db.close()
+def process_brain(text, context=None, memory=None, plans=None, decisions=None):
 
+    # تشخیص موضوع گفتگو
+    detected_context = detect_context(text)
 
 
+    # تحلیل حافظه
+    try:
+        memory_result = analyze_memory(text)
+    except Exception:
+        memory_result = None
 
 
+    # ذخیره در حافظه
+    try:
+        add_memory(text)
+    except Exception:
+        pass
 
 
-def get_context_messages(limit=10):
+    # ثبت لاگ
+    save_brain_log(text)
 
 
-    db = connect()
 
-    cursor = db.cursor()
+    response = {
+        "input": text,
+        "context": detected_context,
+        "memory": memory_result,
+        "plans": plans,
+        "decisions": decisions,
+        "time": str(datetime.datetime.now()),
+        "status": "success"
+    }
 
 
-
-    cursor.execute(
-
-        """
-
-        SELECT role,content
-
-        FROM conversations
-
-        ORDER BY id DESC
-
-        LIMIT ?
-
-        """,
-
-        (limit,)
-
-    )
-
-
-
-    rows = cursor.fetchall()
-
-
-
-    db.close()
-
-
-
-    messages = []
-
-
-
-    for role, content in reversed(rows):
-
-
-        messages.append(
-
-            {
-
-                "role": role,
-
-                "content": content
-
-            }
-
-        )
-
-
-    return messages
-
-
-
-
-
-
-
-def remember_important_information(text):
-
-
-    # تحلیل موضوع گفتگو
-
-    detect_context(
-        text
-    )
-
-
-
-    # تحلیل اهمیت حافظه
-
-    analyze_memory(
-        text
-    )
-
-
-
-    # حافظه دسته بندی شده
-
-
-    if "من" in text:
-
-
-        add_memory(
-
-            "user",
-
-            text
-
-        )
-
-
-
-
-
-    if "پروژه" in text:
-
-
-        add_memory(
-
-            "projects",
-
-            text
-
-        )
-
-
-
-
-
-    if (
-        "دوست دارم" in text
-        or
-        "علاقه" in text
-    ):
-
-
-        add_memory(
-
-            "preferences",
-
-            text
-
-        )
-
-
-
-
-
-    if "هدف" in text:
-
-
-        add_memory(
-
-            "goals",
-
-            text
-
-        )
-
-
-
-
-
-
-
-
-
-def build_memory_context():
-
-
-    db = connect()
-
-    cursor = db.cursor()
-
-
-
-    cursor.execute(
-
-        """
-
-        SELECT role,content
-
-        FROM conversations
-
-        ORDER BY id DESC
-
-        LIMIT 5
-
-        """
-
-    )
-
-
-
-    data = cursor.fetchall()
-
-
-
-    db.close()
-
-
-
-    result = ""
-
-
-
-    for role,content in reversed(data):
-
-
-        result += (
-
-            role
-
-            +
-
-            ": "
-
-            +
-
-            content
-
-            +
-
-            "\n"
-
-        )
-
-
-
-    return result
+    return response

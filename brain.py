@@ -23,11 +23,12 @@ from context_intelligence import (
 )
 
 
+
 DATABASE = "saeed_memory.db"
 
 
 
-# شروع مدیریت حافظه
+# Initialize memory system
 init_memory_manager()
 
 
@@ -37,21 +38,32 @@ def connect():
 
 
 
+def init_database():
+
+    conn = connect()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS brain_logs(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message TEXT,
+            time TEXT
+        )
+        """
+    )
+
+    conn.commit()
+    conn.close()
+
+
+
 def save_brain_log(text):
 
     try:
+
         conn = connect()
         cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS brain_logs(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                message TEXT,
-                time TEXT
-            )
-            """
-        )
 
         cursor.execute(
             """
@@ -72,40 +84,55 @@ def save_brain_log(text):
 
 
 
-def process_brain(text, context=None, memory=None, plans=None, decisions=None):
+def process_brain(
+    text,
+    context=None,
+    memory=None,
+    plans=None,
+    decisions=None
+):
 
-    # تشخیص موضوع گفتگو
-    detected_context = detect_context(text)
+    try:
+        detected_context = detect_context(text)
+    except Exception:
+        detected_context = None
 
 
-    # تحلیل حافظه
     try:
         memory_result = analyze_memory(text)
     except Exception:
         memory_result = None
 
 
-    # ذخیره در حافظه
     try:
         add_memory(text)
     except Exception:
         pass
 
 
-    # ثبت لاگ
     save_brain_log(text)
 
 
 
-    response = {
+    return {
+
         "input": text,
+
         "context": detected_context,
+
         "memory": memory_result,
+
         "plans": plans,
+
         "decisions": decisions,
-        "time": str(datetime.datetime.now()),
-        "status": "success"
+
+        "status": "success",
+
+        "time": str(datetime.datetime.now())
+
     }
 
 
-    return response
+
+# Create database when module loads
+init_database()

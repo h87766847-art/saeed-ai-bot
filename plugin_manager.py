@@ -1,6 +1,6 @@
 # plugin_manager.py
-# Saeed Core
-# Advanced Plugin Management System
+# Saeed Core v7.5
+# Plugin Management System
 
 
 import datetime
@@ -151,7 +151,6 @@ def get_plugins():
 
 
 
-
 def get_active_plugins():
 
 
@@ -164,7 +163,6 @@ def get_active_plugins():
         if plugin["enabled"]
 
     ]
-
 
 
 
@@ -221,4 +219,4 @@ def plugin_status():
 
         "online"
 
-  }
+        }

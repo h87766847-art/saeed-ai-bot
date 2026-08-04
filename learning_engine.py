@@ -1,10 +1,22 @@
 # learning_engine.py
-# Saeed Core
-# Advanced Learning System
+# Saeed Core v7.5
+# Adaptive Learning Engine
 
 
 import datetime
 import uuid
+
+
+
+
+
+try:
+
+    from event_engine import emit_event
+
+except Exception:
+
+    emit_event = None
 
 
 
@@ -20,7 +32,7 @@ EXPERIENCES = {}
 
 def add_experience(
 
-        situation,
+        input_data,
 
         action,
 
@@ -47,9 +59,9 @@ def add_experience(
         experience_id,
 
 
-        "situation":
+        "input":
 
-        situation,
+        input_data,
 
 
         "action":
@@ -67,7 +79,7 @@ def add_experience(
         score,
 
 
-        "created":
+        "time":
 
         str(
 
@@ -76,6 +88,27 @@ def add_experience(
         )
 
     }
+
+
+
+    if emit_event:
+
+
+        try:
+
+            emit_event(
+
+                "learning_experience",
+
+                EXPERIENCES[experience_id]
+
+            )
+
+        except Exception:
+
+            pass
+
+
 
 
 
@@ -88,14 +121,11 @@ def add_experience(
 
 
 
-def get_experiences(
 
-        limit=50
-
-):
+def get_experiences():
 
 
-    data = list(
+    return list(
 
         EXPERIENCES.values()
 
@@ -103,86 +133,38 @@ def get_experiences(
 
 
 
-    return data[-limit:]
 
 
 
 
 
 
+def find_experience(
 
-
-def find_similar(
-
-        situation
+        keyword
 
 ):
 
 
-    results = []
+    result = []
 
 
 
-    words = situation.lower().split()
+    for item in EXPERIENCES.values():
 
 
-
-    for exp in EXPERIENCES.values():
-
-
-        text = exp["situation"].lower()
+        if keyword.lower() in str(item).lower():
 
 
+            result.append(
 
-        matches = 0
-
-
-
-        for word in words:
-
-
-            if word in text:
-
-
-                matches += 1
-
-
-
-
-        if matches > 0:
-
-
-            results.append(
-
-                {
-
-
-                    "experience":
-
-                    exp,
-
-
-                    "similarity":
-
-                    matches
-
-                }
+                item
 
             )
 
 
 
-    results.sort(
-
-        key=lambda x: x["similarity"],
-
-        reverse=True
-
-    )
-
-
-
-    return results
+    return result
 
 
 
@@ -190,37 +172,30 @@ def find_similar(
 
 
 
-def improve_experience(
-
-        experience_id,
-
-        new_score
-
-):
+def learning_score():
 
 
-    if experience_id in EXPERIENCES:
+    if not EXPERIENCES:
 
 
-        EXPERIENCES[experience_id]["score"] = new_score
-
-
-        return True
+        return 0
 
 
 
-    return False
+    total = 0
+
+
+
+    for item in EXPERIENCES.values():
+
+
+        total += item["score"]
 
 
 
 
 
-
-
-def learning_report():
-
-
-    total = len(
+    return total / len(
 
         EXPERIENCES
 
@@ -228,23 +203,13 @@ def learning_report():
 
 
 
-    average = 0
 
 
 
-    if total > 0:
-
-
-        average = sum(
-
-            x["score"]
-
-            for x in EXPERIENCES.values()
-
-        ) / total
 
 
 
+def learning_status():
 
 
     return {
@@ -252,16 +217,20 @@ def learning_report():
 
         "experiences":
 
-        total,
+        len(
+
+            EXPERIENCES
+
+        ),
 
 
-        "average_score":
+        "score":
 
-        average,
+        learning_score(),
 
 
         "status":
 
-        "learning"
+        "active"
 
-        }
+    }

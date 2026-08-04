@@ -1,38 +1,64 @@
 # emotion_engine.py
-# Saeed Core v6.5
-# Emotion Detection Engine
+# Saeed Core
+# Advanced Emotion Intelligence System
 
 
-EMOTION_WORDS = {
+import datetime
+
+
+
+EMOTIONS = {
+
 
     "happy": [
-        "خوشحالم",
+
+        "خوشحال",
         "عالی",
         "خوبه",
-        "😂",
-        "😁"
+        "شاد",
+        "مرسی"
+
     ],
+
 
     "sad": [
-        "ناراحتم",
+
         "غمگین",
-        "تنها",
+        "ناراحت",
         "بد",
-        "😢"
+        "تنها",
+        "گریه"
+
     ],
+
 
     "angry": [
+
         "عصبانی",
-        "حرصم",
-        "اعصابم",
+        "حرص",
+        "اعصاب",
         "خشم"
+
     ],
 
+
     "confused": [
-        "نمی‌فهمم",
+
+        "نمی‌دونم",
         "گیج",
         "چرا",
-        "چطور"
+        "مشکل"
+
+    ],
+
+
+    "excited": [
+
+        "هیجان",
+        "باحال",
+        "خفن",
+        "عالیه"
+
     ]
 
 }
@@ -41,47 +67,91 @@ EMOTION_WORDS = {
 
 
 
+
 def detect_emotion(text):
 
+
     text = text.lower()
+
 
 
     scores = {}
 
 
-    for emotion, words in EMOTION_WORDS.items():
+
+    for emotion, words in EMOTIONS.items():
+
 
         score = 0
 
 
+
         for word in words:
+
 
             if word in text:
 
                 score += 1
 
 
+
         scores[emotion] = score
 
 
 
-    best_emotion = max(
+
+
+    selected = max(
+
         scores,
+
         key=scores.get
+
     )
 
 
-    if scores[best_emotion] == 0:
 
-        best_emotion = "neutral"
+
+
+    if scores[selected] == 0:
+
+        selected = "neutral"
+
+
 
 
 
     return {
 
-        "emotion": best_emotion,
 
-        "scores": scores
+        "emotion":
+
+        selected,
+
+
+        "confidence":
+
+        scores.get(
+
+            selected,
+
+            0
+
+        ),
+
+
+        "all_scores":
+
+        scores,
+
+
+        "time":
+
+        str(
+
+            datetime.datetime.now()
+
+        )
 
     }
 
@@ -89,34 +159,55 @@ def detect_emotion(text):
 
 
 
-def get_emotion_response(emotion):
+
+
+def get_emotion_response(
+
+        emotion
+
+):
 
 
     responses = {
 
+
         "happy":
-        "خوبه که حالت خوبه 😊",
+
+        "خوشحالم که حالت خوبه.",
 
 
         "sad":
-        "می‌فهمم، اگر خواستی درباره‌اش صحبت کنیم.",
+
+        "متوجه شدم. سعی می‌کنم کمکت کنم.",
 
 
         "angry":
-        "به نظر میاد ناراحتی، بگو ببینم چه شده.",
+
+        "آرام‌تر بررسی کنیم تا بهترین راه پیدا شود.",
 
 
         "confused":
-        "بیا مرحله به مرحله بررسی کنیم.",
+
+        "بیایید مرحله به مرحله بررسی کنیم.",
+
+
+        "excited":
+
+        "عالیه، ایده‌ات جالب به نظر می‌رسه.",
 
 
         "neutral":
-        "باشه، ادامه بده."
+
+        "در خدمتم."
 
     }
 
 
+
     return responses.get(
+
         emotion,
-        "باشه."
-)
+
+        responses["neutral"]
+
+    )

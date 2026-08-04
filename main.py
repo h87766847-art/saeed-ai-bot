@@ -1,6 +1,13 @@
+# main.py
+# Saeed AI v3.0
+# Telegram Agent Integration
+
+
 import os
 
+
 from telegram import Update
+
 
 from telegram.ext import (
     Application,
@@ -11,33 +18,23 @@ from telegram.ext import (
 )
 
 
-from core_router import route_message
-
 
 from brain import (
+    init_database,
     save_conversation,
-    remember_important_information,
-    init_database
+    remember_important_information
 )
 
 
-from response_engine import (
-    generate_response
+
+from core_router import (
+    route_message
 )
 
 
-from self_evaluator import (
-    evaluate
-)
 
-
-from reflection_engine import (
-    create_reflection
-)
-
-
-from learning_loop import (
-    add_experience
+from saeed_agent import (
+    create_agent_response
 )
 
 
@@ -53,20 +50,22 @@ TOKEN = os.getenv(
 
 
 
-# =========================
-# شروع ربات
-# =========================
+
+
 
 async def start(
+
     update: Update,
+
     context: ContextTypes.DEFAULT_TYPE
+
 ):
 
 
     await update.message.reply_text(
 
-        "سلام 👋\n"
-        "سعید AI v2 آماده است."
+        "🤖 سلام\n"
+        "Saeed AI v3.0 فعال شد."
 
     )
 
@@ -78,10 +77,6 @@ async def start(
 
 
 
-# =========================
-# پردازش پیام
-# =========================
-
 async def message_handler(
 
     update: Update,
@@ -92,6 +87,8 @@ async def message_handler(
 
 
     user_text = update.message.text
+
+
 
 
 
@@ -108,7 +105,8 @@ async def message_handler(
 
 
 
-    # استخراج اطلاعات مهم
+
+    # بررسی اطلاعات مهم
 
     remember_important_information(
 
@@ -120,7 +118,8 @@ async def message_handler(
 
 
 
-    # مسیریابی
+
+    # بررسی مسیر پیام
 
     route = route_message(
 
@@ -132,13 +131,7 @@ async def message_handler(
 
 
 
-
-
-    # =====================
-    # ابزار
-    # =====================
-
-    if route["type"] == "tool":
+    if route["type"] != "chat":
 
 
         response = str(
@@ -148,189 +141,17 @@ async def message_handler(
         )
 
 
-        await update.message.reply_text(
 
-            response
-
-        )
+    else:
 
 
-        save_conversation(
+        response = create_agent_response(
 
-            "assistant",
-
-            response
+            user_text
 
         )
 
 
-        return
-
-
-
-
-
-
-
-    # =====================
-    # تصمیم ساده
-    # =====================
-
-    if route["type"] == "decision":
-
-
-        response = str(
-
-            route["data"]
-
-        )
-
-
-        await update.message.reply_text(
-
-            response
-
-        )
-
-
-        save_conversation(
-
-            "assistant",
-
-            response
-
-        )
-
-
-        return
-
-
-
-
-
-
-
-    # =====================
-    # تحلیل تصمیم
-    # =====================
-
-    if route["type"] == "decision_analysis":
-
-
-        analysis = route["data"]
-
-
-
-        response = (
-
-            "⚖️ تحلیل تصمیم\n\n"
-
-            "موضوع:\n"
-
-            +
-
-            analysis["problem"]
-
-            +
-
-            "\n\nگزینه‌ها:\n"
-
-        )
-
-
-
-        for option in analysis["options"]:
-
-
-            response += (
-
-                "\n• "
-
-                +
-
-                option["name"]
-
-            )
-
-
-
-
-
-        await update.message.reply_text(
-
-            response
-
-        )
-
-
-
-        save_conversation(
-
-            "assistant",
-
-            response
-
-        )
-
-
-        return
-
-
-
-
-
-
-
-    # =====================
-    # هدف
-    # =====================
-
-    if route["type"] == "goal":
-
-
-        response = str(
-
-            route["data"]
-
-        )
-
-
-
-        await update.message.reply_text(
-
-            response
-
-        )
-
-
-
-        save_conversation(
-
-            "assistant",
-
-            response
-
-        )
-
-
-        return
-
-
-
-
-
-
-
-    # =====================
-    # چت هوشمند
-    # =====================
-
-
-    response = generate_response(
-
-        user_text
-
-    )
 
 
 
@@ -340,6 +161,8 @@ async def message_handler(
         response
 
     )
+
+
 
 
 
@@ -358,56 +181,7 @@ async def message_handler(
 
 
 
-    # =====================
-    # خودارزیابی و یادگیری
-    # =====================
 
-
-    evaluate(
-
-        user_text,
-
-        response,
-
-        8
-
-    )
-
-
-
-    create_reflection(
-
-        user_text,
-
-        True,
-
-        "پاسخ تولید شد و برای بهبود آینده ثبت شد"
-
-    )
-
-
-
-    add_experience(
-
-        user_text,
-
-        response,
-
-        "تجربه جدید ذخیره شد"
-
-    )
-
-
-
-
-
-
-
-
-
-# =========================
-# اجرای اصلی
-# =========================
 
 def main():
 
@@ -442,6 +216,7 @@ def main():
 
 
 
+
     app.add_handler(
 
         MessageHandler(
@@ -458,9 +233,10 @@ def main():
 
 
 
+
     print(
 
-        "Saeed AI v2 is running..."
+        "Saeed AI v3.0 Running..."
 
     )
 
@@ -468,7 +244,10 @@ def main():
 
 
 
+
     app.run_polling()
+
+
 
 
 

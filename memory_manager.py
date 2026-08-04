@@ -1,217 +1,116 @@
-# memory_manager.py
-# Saeed AI v2.3
-# Smart Memory Retrieval System
-
-
-import json
+import sqlite3
 import os
+from datetime import datetime
+
+
+DB_NAME = "saeed_memory.db"
+
+
+def init_memory_manager():
+    """
+    Initialize memory database
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS memories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content TEXT,
+            category TEXT,
+            created_at TEXT
+        )
+        """)
+
+        conn.commit()
+        conn.close()
+
+        print("Memory Manager initialized")
+        return True
+
+    except Exception as e:
+        print("Memory init error:", e)
+        return False
 
 
 
+def add_memory(content, category="general"):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
 
-MEMORY_FILE = "saeed_smart_memory.json"
+        cursor.execute(
+            """
+            INSERT INTO memories
+            (content, category, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (
+                content,
+                category,
+                str(datetime.now())
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        return True
+
+    except Exception as e:
+        print("Add memory error:", e)
+        return False
 
 
 
+def get_memories(limit=10):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
 
+        cursor.execute(
+            """
+            SELECT content, category
+            FROM memories
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,)
+        )
 
+        data = cursor.fetchall()
 
+        conn.close()
 
-def load_memory():
+        return data
 
-
-    if not os.path.exists(MEMORY_FILE):
-
+    except Exception as e:
+        print("Read memory error:", e)
         return []
 
 
 
-    with open(
+def search_memory(keyword):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
 
-        MEMORY_FILE,
-
-        "r",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        return json.load(file)
-
-
-
-
-
-
-
-
-
-def save_memory(data):
-
-
-    with open(
-
-        MEMORY_FILE,
-
-        "w",
-
-        encoding="utf-8"
-
-    ) as file:
-
-
-        json.dump(
-
-            data,
-
-            file,
-
-            ensure_ascii=False,
-
-            indent=4
-
+        cursor.execute(
+            """
+            SELECT content, category
+            FROM memories
+            WHERE content LIKE ?
+            """,
+            (f"%{keyword}%",)
         )
 
+        result = cursor.fetchall()
 
+        conn.close()
 
+        return result
 
-
-
-
-
-
-def add_memory(memory):
-
-
-    data = load_memory()
-
-
-
-    data.append(
-
-        memory
-
-    )
-
-
-
-    save_memory(
-
-        data
-
-    )
-
-
-
-    return memory
-
-
-
-
-
-
-
-def search_memory(query):
-
-
-    memories = load_memory()
-
-
-
-    results = []
-
-
-
-    words = query.split()
-
-
-
-    for memory in memories:
-
-
-        content = memory.get(
-
-            "content",
-
-            ""
-
-        )
-
-
-
-        score = 0
-
-
-
-        for word in words:
-
-
-            if word in content:
-
-
-                score += 1
-
-
-
-
-
-        if score > 0:
-
-
-            memory["score"] = score
-
-
-            results.append(
-
-                memory
-
-            )
-
-
-
-
-
-    results.sort(
-
-        key=lambda x: x.get(
-
-            "importance",
-
-            0
-
-        ),
-
-        reverse=True
-
-    )
-
-
-
-    return results
-
-
-
-
-
-
-
-def get_best_memory(query):
-
-
-    results = search_memory(
-
-        query
-
-    )
-
-
-
-    if results:
-
-
-        return results[0]
-
-
-
-    return None
+    except Exception as e:
+        print("Search memory error:", e)
+        return []

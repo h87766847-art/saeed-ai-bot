@@ -13,12 +13,22 @@ from memory_intelligence import (
 )
 
 
+from context_intelligence import (
+    detect_context
+)
+
+
+
+
 
 DATABASE = "saeed_memory.db"
 
 
 
+
+
 init_memory_manager()
+
 
 
 
@@ -35,6 +45,7 @@ def connect():
 
 
 
+
 def init_database():
 
     db = connect()
@@ -42,7 +53,9 @@ def init_database():
     cursor = db.cursor()
 
 
+
     cursor.execute("""
+
     CREATE TABLE IF NOT EXISTS conversations (
 
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,7 +67,9 @@ def init_database():
         time TEXT
 
     )
+
     """)
+
 
 
     db.commit()
@@ -148,6 +163,7 @@ def get_context_messages(limit=10):
     rows = cursor.fetchall()
 
 
+
     db.close()
 
 
@@ -156,7 +172,8 @@ def get_context_messages(limit=10):
 
 
 
-    for role,content in reversed(rows):
+    for role, content in reversed(rows):
+
 
         messages.append(
 
@@ -182,7 +199,15 @@ def get_context_messages(limit=10):
 def remember_important_information(text):
 
 
-    # تحلیل حافظه بلندمدت
+    # تحلیل موضوع گفتگو
+
+    detect_context(
+        text
+    )
+
+
+
+    # تحلیل اهمیت حافظه
 
     analyze_memory(
         text
@@ -190,14 +215,7 @@ def remember_important_information(text):
 
 
 
-    lower = text.lower()
-
-
-
-
-
-
-    # اطلاعات کاربر
+    # حافظه دسته بندی شده
 
 
     if "من" in text:
@@ -215,11 +233,6 @@ def remember_important_information(text):
 
 
 
-
-
-    # پروژه‌ها
-
-
     if "پروژه" in text:
 
 
@@ -233,11 +246,6 @@ def remember_important_information(text):
 
 
 
-
-
-
-
-    # علاقه‌ها
 
 
     if (
@@ -259,11 +267,6 @@ def remember_important_information(text):
 
 
 
-
-
-    # هدف‌ها
-
-
     if "هدف" in text:
 
 
@@ -281,8 +284,9 @@ def remember_important_information(text):
 
 
 
-def build_memory_context():
 
+
+def build_memory_context():
 
 
     db = connect()

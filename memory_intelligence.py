@@ -1,6 +1,6 @@
 # memory_intelligence.py
-# Saeed AI v2.2
-# Smart Memory Analyzer
+# Saeed AI v2.4
+# Advanced Memory Scoring System
 
 
 import datetime
@@ -9,127 +9,98 @@ import datetime
 
 
 
-def detect_memory_type(text):
 
+def create_memory_record(
 
-    text = text.lower()
+    content,
 
+    memory_type,
 
+    importance
 
-    if (
-        "من" in text
-        or
-        "هستم" in text
-        or
-        "دارم" in text
-    ):
+):
 
-        return "user"
 
+    return {
 
+        "content": content,
 
-    if (
-        "پروژه" in text
-        or
-        "ساخت" in text
-        or
-        "برنامه" in text
-    ):
+        "type": memory_type,
 
-        return "projects"
+        "importance": importance,
 
+        "created":
 
+        str(datetime.datetime.now()),
 
-    if (
-        "دوست دارم" in text
-        or
-        "علاقه" in text
-        or
-        "عاشق" in text
-    ):
+        "access_count": 0
 
-        return "preferences"
+    }
 
 
 
-    if (
-        "هدف" in text
-        or
-        "میخواهم" in text
-        or
-        "می‌خواهم" in text
-    ):
 
-        return "goals"
 
 
 
-    return "general"
 
+def increase_memory_usage(memory):
 
 
+    memory["access_count"] = (
 
+        memory.get(
 
+            "access_count",
 
+            0
 
+        )
 
-def calculate_importance(text):
+        +
 
+        1
 
-    score = 1
+    )
 
 
+    return memory
 
-    important_words = [
 
-        "هدف",
 
-        "پروژه",
 
-        "علاقه",
 
-        "دوست دارم",
 
-        "میخواهم",
 
-        "کار",
 
-        "یادگیری",
 
-        "تخصص"
+def calculate_memory_score(memory):
 
-    ]
 
+    importance = memory.get(
 
+        "importance",
 
+        1
 
-    for word in important_words:
+    )
 
 
-        if word in text:
+    usage = memory.get(
 
+        "access_count",
 
-            score += 1
+        0
 
+    )
 
 
 
+    score = (
 
-    if len(text) > 50:
+        importance * 10
 
-
-        score += 1
-
-
-
-
-
-    if score > 10:
-
-
-        score = 10
-
-
+    ) + usage
 
 
 
@@ -143,41 +114,55 @@ def calculate_importance(text):
 
 
 
-def analyze_memory(text):
+def rank_memories(memories):
 
 
-    memory_type = detect_memory_type(
+    for memory in memories:
 
-        text
+
+        memory["score"] = calculate_memory_score(
+
+            memory
+
+        )
+
+
+
+    memories.sort(
+
+        key=lambda x: x["score"],
+
+        reverse=True
 
     )
 
 
 
-    importance = calculate_importance(
+    return memories
 
-        text
+
+
+
+
+
+
+
+
+def get_best_memories(
+
+    memories,
+
+    limit=5
+
+):
+
+
+    ranked = rank_memories(
+
+        memories
 
     )
 
 
 
-
-    return {
-
-
-        "type": memory_type,
-
-
-        "importance": importance,
-
-
-        "content": text,
-
-
-        "time":
-
-        str(datetime.datetime.now())
-
-
-    }
+    return ranked[:limit]

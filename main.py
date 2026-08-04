@@ -1,60 +1,75 @@
 import os
+import datetime
 
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
-    MessageHandler,
     CommandHandler,
+    MessageHandler,
     ContextTypes,
     filters
 )
 
-from main import process_message
+try:
+    from core_router import route_message
+except Exception:
+    route_message = None
 
 
-TOKEN = os.getenv("BOT_TOKEN")
+SYSTEM_NAME = "Saeed Core"
+VERSION = "7.5"
+
+
+def process_message(message):
+
+    try:
+        if route_message:
+            return route_message(message)
+
+        return "Core router not found"
+
+    except Exception as e:
+        return f"Error: {e}"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
-        "سلام، سعید آماده است."
+        "سعید دوباره فعال شد ✅"
     )
 
 
-
-async def handle_message(
+async def telegram_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
 
     text = update.message.text
 
-    result = process_message(text)
+    answer = process_message(text)
 
-
-    if isinstance(result, dict):
-
-        answer = result.get(
+    if isinstance(answer, dict):
+        answer = answer.get(
             "message",
-            str(result)
+            str(answer)
         )
 
-    else:
-
-        answer = str(result)
-
-
     await update.message.reply_text(
-        answer
+        str(answer)
     )
 
 
+def start_bot():
 
-def main():
+    token = os.getenv("BOT_TOKEN")
+
+    if not token:
+        print("BOT_TOKEN missing")
+        return
+
 
     app = ApplicationBuilder()\
-        .token(TOKEN)\
+        .token(token)\
         .build()
 
 
@@ -69,13 +84,15 @@ def main():
     app.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
-            handle_message
+            telegram_handler
         )
     )
 
 
+    print("Saeed Telegram Connected...")
     print(
-        "Saeed Telegram Bot Running..."
+        "Time:",
+        datetime.datetime.now()
     )
 
 
@@ -85,4 +102,4 @@ def main():
 
 if __name__ == "__main__":
 
-    main()
+    start_bot()

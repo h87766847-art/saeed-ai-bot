@@ -28,12 +28,12 @@ DATABASE = "saeed_memory.db"
 
 
 
-# Initialize memory system
 init_memory_manager()
 
 
 
 def connect():
+
     return sqlite3.connect(DATABASE)
 
 
@@ -42,6 +42,7 @@ def init_database():
 
     conn = connect()
     cursor = conn.cursor()
+
 
     cursor.execute(
         """
@@ -52,6 +53,19 @@ def init_database():
         )
         """
     )
+
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS conversations(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user TEXT,
+            assistant TEXT,
+            time TEXT
+        )
+        """
+    )
+
 
     conn.commit()
     conn.close()
@@ -65,6 +79,7 @@ def save_brain_log(text):
         conn = connect()
         cursor = conn.cursor()
 
+
         cursor.execute(
             """
             INSERT INTO brain_logs(message,time)
@@ -76,11 +91,51 @@ def save_brain_log(text):
             )
         )
 
+
         conn.commit()
         conn.close()
 
+
     except Exception as e:
+
         print("Brain log error:", e)
+
+
+
+
+def save_conversation(user_text, assistant_text):
+
+    try:
+
+        conn = connect()
+        cursor = conn.cursor()
+
+
+        cursor.execute(
+            """
+            INSERT INTO conversations(
+                user,
+                assistant,
+                time
+            )
+            VALUES (?,?,?)
+            """,
+            (
+                user_text,
+                assistant_text,
+                str(datetime.datetime.now())
+            )
+        )
+
+
+        conn.commit()
+        conn.close()
+
+
+    except Exception as e:
+
+        print("Conversation save error:", e)
+
 
 
 
@@ -94,20 +149,31 @@ def process_brain(
 
     try:
         detected_context = detect_context(text)
+
     except Exception:
+
         detected_context = None
 
 
+
     try:
+
         memory_result = analyze_memory(text)
+
     except Exception:
+
         memory_result = None
 
 
+
     try:
+
         add_memory(text)
+
     except Exception:
+
         pass
+
 
 
     save_brain_log(text)
@@ -134,5 +200,5 @@ def process_brain(
 
 
 
-# Create database when module loads
+
 init_database()

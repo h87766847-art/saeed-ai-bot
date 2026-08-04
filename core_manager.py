@@ -1,6 +1,6 @@
 # core_manager.py
 # Saeed Core v7.5
-# Central System Manager
+# Central Core Manager
 
 
 import datetime
@@ -9,7 +9,44 @@ import datetime
 
 
 
-SYSTEM_COMPONENTS = {}
+try:
+
+    from capability_manager import capability_status
+
+except Exception:
+
+    capability_status = None
+
+
+
+
+
+try:
+
+    from self_upgrade_engine import upgrade_status
+
+except Exception:
+
+    upgrade_status = None
+
+
+
+
+
+try:
+
+    from module_loader import loader_status
+
+except Exception:
+
+    loader_status = None
+
+
+
+
+
+
+COMPONENTS = {}
 
 
 
@@ -21,19 +58,12 @@ def register_component(
 
         name,
 
-        component,
-
         status="active"
 
 ):
 
 
-    SYSTEM_COMPONENTS[name] = {
-
-
-        "component":
-
-        component,
+    COMPONENTS[name] = {
 
 
         "status":
@@ -61,7 +91,7 @@ def register_component(
 
 
 
-def update_component_status(
+def update_component(
 
         name,
 
@@ -70,13 +100,13 @@ def update_component_status(
 ):
 
 
-    if name in SYSTEM_COMPONENTS:
+    if name in COMPONENTS:
 
 
-        SYSTEM_COMPONENTS[name]["status"] = status
+        COMPONENTS[name]["status"] = status
 
 
-        SYSTEM_COMPONENTS[name]["updated"] = str(
+        COMPONENTS[name]["updated"] = str(
 
             datetime.datetime.now()
 
@@ -95,85 +125,10 @@ def update_component_status(
 
 
 
-def get_component(
-
-        name
-
-):
+def get_components():
 
 
-    return SYSTEM_COMPONENTS.get(
-
-        name,
-
-        None
-
-    )
-
-
-
-
-
-
-
-
-def list_components():
-
-
-    return SYSTEM_COMPONENTS
-
-
-
-
-
-
-
-def register_core_modules():
-
-
-    modules = [
-
-
-        "brain",
-
-
-        "memory",
-
-
-        "router",
-
-
-        "learning",
-
-
-        "upgrade",
-
-
-        "security",
-
-
-        "plugins"
-
-    ]
-
-
-
-    for module in modules:
-
-
-        register_component(
-
-            module,
-
-            module,
-
-            "active"
-
-        )
-
-
-
-    return True
+    return COMPONENTS
 
 
 
@@ -184,50 +139,12 @@ def register_core_modules():
 def system_health():
 
 
-    total = len(
-
-        SYSTEM_COMPONENTS
-
-    )
-
-
-
-    active = 0
-
-
-
-    for item in SYSTEM_COMPONENTS.values():
-
-
-        if item["status"] == "active":
-
-
-            active += 1
-
-
-
-
-
-    return {
+    health = {
 
 
         "components":
 
-        total,
-
-
-        "active":
-
-        active,
-
-
-        "health":
-
-        "excellent"
-
-        if total == active
-
-        else "warning",
+        COMPONENTS,
 
 
         "time":
@@ -241,6 +158,35 @@ def system_health():
     }
 
 
+
+    if capability_status:
+
+
+        health["capabilities"] = capability_status()
+
+
+
+
+
+    if upgrade_status:
+
+
+        health["upgrades"] = upgrade_status()
+
+
+
+
+
+    if loader_status:
+
+
+        health["modules"] = loader_status()
+
+
+
+
+
+    return health
 
 
 
@@ -263,14 +209,9 @@ def core_status():
 
         len(
 
-            SYSTEM_COMPONENTS
+            COMPONENTS
 
         ),
-
-
-        "health":
-
-        system_health(),
 
 
         "status":
@@ -284,4 +225,28 @@ def core_status():
 
 
 
-register_core_modules()
+
+for item in [
+
+    "brain",
+
+    "memory",
+
+    "router",
+
+    "learning",
+
+    "upgrade",
+
+    "security",
+
+    "plugins"
+
+]:
+
+
+    register_component(
+
+        item
+
+)

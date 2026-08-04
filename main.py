@@ -1,14 +1,13 @@
 # main.py
-# Saeed AI v3.0
-# Telegram Agent Integration
+# Saeed Core v6.3
+# Telegram AI Assistant Main
 
 
 import os
+import logging
 
 
 from telegram import Update
-
-
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -18,164 +17,103 @@ from telegram.ext import (
 )
 
 
-
 from brain import (
-    init_database,
+    process_brain,
     save_conversation,
-    remember_important_information
+    init_database
 )
-
 
 
 from core_router import (
-    route_message
+    analyze_request
 )
 
 
 
-from saeed_agent import (
-    create_agent_response
+# تنظیمات لاگ
+logging.basicConfig(
+    level=logging.INFO
 )
 
 
 
-
-
+# توکن ربات
 TOKEN = os.getenv(
     "BOT_TOKEN"
 )
 
 
 
-
+# شروع دیتابیس
+init_database()
 
 
 
 
 
 async def start(
-
     update: Update,
-
     context: ContextTypes.DEFAULT_TYPE
-
 ):
 
-
     await update.message.reply_text(
-
-        "🤖 سلام\n"
-        "Saeed AI v3.0 فعال شد."
-
+        "سلام 👋\n"
+        "Saeed AI Core فعال شد."
     )
 
 
 
 
 
-
-
-
-
-async def message_handler(
-
+async def handle_message(
     update: Update,
-
     context: ContextTypes.DEFAULT_TYPE
-
 ):
-
 
     user_text = update.message.text
 
 
+    try:
+
+        # عبور از روتر هوشمند
+        result = analyze_request(
+            user_text
+        )
 
 
-
-    # ذخیره پیام کاربر
-
-    save_conversation(
-
-        "user",
-
-        user_text
-
-    )
-
-
-
-
-
-    # بررسی اطلاعات مهم
-
-    remember_important_information(
-
-        user_text
-
-    )
-
-
-
-
-
-
-    # بررسی مسیر پیام
-
-    route = route_message(
-
-        user_text
-
-    )
-
-
-
-
-
-    if route["type"] != "chat":
+        # پردازش مغز
+        brain_result = process_brain(
+            user_text,
+            result
+        )
 
 
         response = str(
+            brain_result
+        )
 
-            route["data"]
 
+        save_conversation(
+            user_text,
+            response
+        )
+
+
+        await update.message.reply_text(
+            response[:4000]
         )
 
 
 
-    else:
+    except Exception as e:
 
 
-        response = create_agent_response(
+        logging.error(e)
 
-            user_text
 
+        await update.message.reply_text(
+            "خطا در پردازش پیام ❌"
         )
-
-
-
-
-
-
-    await update.message.reply_text(
-
-        response
-
-    )
-
-
-
-
-
-
-    save_conversation(
-
-        "assistant",
-
-        response
-
-    )
-
-
 
 
 
@@ -186,70 +124,47 @@ async def message_handler(
 def main():
 
 
-    init_database()
+    if not TOKEN:
+
+        print(
+            "BOT_TOKEN پیدا نشد"
+        )
+
+        return
 
 
 
     app = Application.builder().token(
-
         TOKEN
-
     ).build()
 
 
 
-
-
     app.add_handler(
-
         CommandHandler(
-
             "start",
-
             start
-
         )
-
     )
-
-
-
 
 
 
     app.add_handler(
-
         MessageHandler(
-
             filters.TEXT & ~filters.COMMAND,
-
-            message_handler
-
+            handle_message
         )
-
     )
-
-
-
 
 
 
     print(
-
-        "Saeed AI v3.0 Running..."
-
+        "Saeed AI Bot Started..."
     )
 
 
 
-
-
-
     app.run_polling()
-
-
-
-
 
 
 

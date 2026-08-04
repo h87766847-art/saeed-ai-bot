@@ -1,6 +1,6 @@
 # brain.py
-# Saeed Core v6.5
-# Smart Brain + Personality + Emotion
+# Saeed Core v6.6
+# Smart Brain + Emotion + Decision
 
 
 import sqlite3
@@ -36,6 +36,11 @@ from emotion_engine import (
 )
 
 
+from decision_intelligence import (
+    get_decision
+)
+
+
 
 DATABASE = "saeed_memory.db"
 
@@ -48,11 +53,13 @@ init_memory_manager()
 
 
 
+
 def connect():
 
     return sqlite3.connect(
         DATABASE
     )
+
 
 
 
@@ -105,6 +112,7 @@ def init_database():
 
 
 
+
 def save_brain_log(text):
 
     try:
@@ -122,6 +130,7 @@ def save_brain_log(text):
             )
             VALUES (?,?)
             """,
+
             (
                 text,
                 str(datetime.datetime.now())
@@ -147,78 +156,15 @@ def save_brain_log(text):
 
 
 
-def save_conversation(
-        user_text,
-        assistant_text
-):
-
-    try:
-
-        conn = connect()
-
-        cursor = conn.cursor()
-
-
-        cursor.execute(
-            """
-            INSERT INTO conversations(
-                user,
-                assistant,
-                time
-            )
-            VALUES (?,?,?)
-            """,
-            (
-                user_text,
-                assistant_text,
-                str(datetime.datetime.now())
-            )
-        )
-
-
-        conn.commit()
-
-        conn.close()
-
-
-    except Exception as e:
-
-        print(
-            "Conversation error:",
-            e
-        )
-
-
-
-
-
-
-
-
 def remember_important_information(
         information
 ):
 
-    try:
-
-        add_memory(
-            information,
-            category="important",
-            importance=5
-        )
-
-
-        return True
-
-
-    except Exception as e:
-
-        print(
-            "Memory error:",
-            e
-        )
-
-        return False
+    add_memory(
+        information,
+        category="important",
+        importance=5
+    )
 
 
 
@@ -235,23 +181,11 @@ def process_brain(
 ):
 
 
-    # تشخیص موضوع
-
-    try:
-
-        detected_context = detect_context(
-            text
-        )
-
-    except Exception:
-
-        detected_context = None
+    detected_context = detect_context(
+        text
+    )
 
 
-
-
-
-    # تشخیص احساس
 
     emotion = detect_emotion(
         text
@@ -259,14 +193,15 @@ def process_brain(
 
 
 
+    decision = get_decision(
+        text
+    )
 
 
-    # حافظه
 
     memory_analysis = analyze_memory(
         text
     )
-
 
 
 
@@ -281,11 +216,9 @@ def process_brain(
 
 
 
-
     information = extract_information(
         text
     )
-
 
 
 
@@ -296,19 +229,11 @@ def process_brain(
 
 
 
-    emotional_reply = get_emotion_response(
-        emotion["emotion"]
-    )
-
-
-
-
-
     response = add_personality(
-        emotional_reply
+        get_emotion_response(
+            emotion["emotion"]
+        )
     )
-
-
 
 
 
@@ -316,7 +241,6 @@ def process_brain(
     save_brain_log(
         text
     )
-
 
 
 
@@ -335,6 +259,9 @@ def process_brain(
 
 
         "emotion": emotion,
+
+
+        "decision": decision,
 
 
         "context": detected_context,

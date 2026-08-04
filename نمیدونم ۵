@@ -1,0 +1,110 @@
+import json
+import os
+import datetime
+
+
+
+FILE = "saeed_plans.json"
+
+
+
+
+
+def load_plans():
+
+    if not os.path.exists(FILE):
+
+        return []
+
+
+    with open(
+        FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        return json.load(f)
+
+
+
+
+
+
+
+def save_plans(plans):
+
+    with open(
+        FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            plans,
+            f,
+            ensure_ascii=False,
+            indent=4
+        )
+
+
+
+
+
+
+
+def create_plan(
+    goal,
+    steps
+):
+
+
+    plans = load_plans()
+
+
+
+    plan = {
+
+        "goal": goal,
+
+        "steps": steps,
+
+        "status": "active",
+
+        "created":
+        str(datetime.datetime.now())
+
+    }
+
+
+
+    plans.append(
+        plan
+    )
+
+
+    save_plans(
+        plans
+    )
+
+
+    return plan
+
+
+
+
+
+
+
+def get_active_plans():
+
+
+    plans = load_plans()
+
+
+    return [
+
+        p for p in plans
+
+        if p["status"] == "active"
+
+    ]

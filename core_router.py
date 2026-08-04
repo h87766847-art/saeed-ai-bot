@@ -1,44 +1,39 @@
 # core_router.py
-# Saeed Core
-# Advanced Central Intelligence Router
+# Saeed Core v7.0
+# Central Intelligence Router
 
 
-from memory_manager import (
-    get_best_memory
-)
+from brain import process_brain
 
 
-from context_intelligence import (
-    get_context_information
-)
+try:
+    from memory_manager import get_best_memory
+except Exception:
+    get_best_memory = None
 
 
-from planner_intelligence import (
-    get_active_plans
-)
+try:
+    from context_intelligence import get_context_information
+except Exception:
+    get_context_information = None
 
 
-from decision_intelligence import (
-    get_decisions
-)
+try:
+    from planner_intelligence import get_active_plans
+except Exception:
+    get_active_plans = None
 
 
-import datetime
+try:
+    from decision_intelligence import get_decisions
+except Exception:
+    get_decisions = None
 
 
 
 
 
-def safe_call(function, default=None, *args):
-
-    try:
-
-        return function(*args)
-
-    except Exception:
-
-        return default
-
+ROUTER_VERSION = "7.0"
 
 
 
@@ -48,66 +43,84 @@ def safe_call(function, default=None, *args):
 def analyze_request(text):
 
 
-    context = safe_call(
-        get_context_information,
-        {},
-        text
-    )
+    request_data = {
 
 
-
-    memories = safe_call(
-        get_best_memory,
-        [],
-        text
-    )
+        "text": text,
 
 
-
-    plans = safe_call(
-        get_active_plans,
-        [],
-    )
-
-
-
-    decisions = safe_call(
-        get_decisions,
-        [],
-        text
-    )
-
-
-
-
-    route = {
-
-        "input": text,
-
-
-        "context": context,
-
-
-        "memory": memories,
-
-
-        "plans": plans,
-
-
-        "decisions": decisions,
-
-
-
-        "route_time":
-        str(
-            datetime.datetime.now()
-        )
+        "router_version": ROUTER_VERSION
 
     }
 
 
 
-    return route
+    if get_context_information:
+
+        try:
+
+            request_data["context"] = get_context_information(text)
+
+        except Exception:
+
+            request_data["context"] = None
+
+
+
+
+
+    if get_best_memory:
+
+        try:
+
+            request_data["memory"] = get_best_memory(text)
+
+        except Exception:
+
+            request_data["memory"] = None
+
+
+
+
+
+    if get_active_plans:
+
+        try:
+
+            request_data["plans"] = get_active_plans()
+
+        except Exception:
+
+            request_data["plans"] = []
+
+
+
+
+
+    if get_decisions:
+
+        try:
+
+            request_data["decisions"] = get_decisions(text)
+
+        except Exception:
+
+            request_data["decisions"] = None
+
+
+
+
+
+
+    brain_response = process_brain(text)
+
+
+
+    request_data["brain"] = brain_response
+
+
+
+    return request_data
 
 
 
@@ -115,39 +128,10 @@ def analyze_request(text):
 
 
 
-def choose_path(route):
+def route_message(text):
 
 
-    decision = route.get(
-        "decisions",
-        {}
-    )
-
-
-
-    if decision:
-
-        return "decision"
-
-
-
-    if route.get(
-        "memory"
-    ):
-
-        return "memory"
-
-
-
-    if route.get(
-        "plans"
-    ):
-
-        return "planning"
-
-
-
-    return "conversation"
+    return analyze_request(text)
 
 
 
@@ -155,19 +139,18 @@ def choose_path(route):
 
 
 
-def build_context(text):
+def router_status():
 
 
-    route = analyze_request(
-        text
-    )
+    return {
 
 
-
-    route["selected_path"] = choose_path(
-        route
-    )
+        "name": "Saeed Router",
 
 
+        "version": ROUTER_VERSION,
 
-    return route
+
+        "status": "online"
+
+            }

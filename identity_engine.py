@@ -1,17 +1,34 @@
 # identity_engine.py
-# Saeed Core
-# Advanced Identity Management System
+# Saeed Core v7.5
+# Identity + Capability Connection
 
 
-import datetime
 import json
 import os
+import datetime
 
 
 
 
 
 IDENTITY_FILE = "saeed_identity.json"
+
+
+
+
+
+try:
+
+    from capability_manager import (
+        add_capability,
+        get_capabilities
+    )
+
+except Exception:
+
+    add_capability = None
+    get_capabilities = None
+
 
 
 
@@ -27,9 +44,23 @@ DEFAULT_IDENTITY = {
     "Saeed",
 
 
+    "version":
+
+    "7.5",
+
+
     "role":
 
-    "AI Assistant",
+    "AI Core Assistant",
+
+
+    "created":
+
+    str(
+
+        datetime.datetime.now()
+
+    ),
 
 
     "personality":
@@ -37,7 +68,7 @@ DEFAULT_IDENTITY = {
     {
 
 
-        "helpful":
+        "logical":
 
         True,
 
@@ -47,38 +78,11 @@ DEFAULT_IDENTITY = {
         True,
 
 
-        "logical":
-
-        True,
-
-
-        "patient":
+        "adaptive":
 
         True
 
-    },
-
-
-    "communication":
-
-    {
-
-
-        "language":
-
-        "fa",
-
-
-        "style":
-
-        "friendly"
-
-    },
-
-
-    "created":
-
-    None
+    }
 
 }
 
@@ -117,6 +121,7 @@ def save_identity(
             indent=4
 
         )
+
 
 
 
@@ -176,20 +181,19 @@ def update_identity(
 ):
 
 
-    identity = load_identity()
+    data = load_identity()
 
 
 
-    identity[key] = value
+    data[key] = value
 
 
 
     save_identity(
 
-        identity
+        data
 
     )
-
 
 
     return True
@@ -207,33 +211,108 @@ def get_identity(
 ):
 
 
-    identity = load_identity()
+    data = load_identity()
 
 
 
     if key:
 
 
-        return identity.get(
+        return data.get(
 
             key
 
         )
 
 
-
-    return identity
-
+    return data
 
 
 
 
 
 
-def personality_report():
+
+def register_default_capabilities():
 
 
-    identity = load_identity()
+    if add_capability:
+
+
+        capabilities = [
+
+
+            (
+
+                "memory",
+
+                "Memory management system"
+
+            ),
+
+
+            (
+
+                "learning",
+
+                "Learning engine"
+
+            ),
+
+
+            (
+
+                "upgrade",
+
+                "Upgrade management"
+
+            ),
+
+
+            (
+
+                "security",
+
+                "Security protection"
+
+            )
+
+
+        ]
+
+
+
+        for name, desc in capabilities:
+
+
+            try:
+
+                add_capability(
+
+                    name,
+
+                    desc
+
+                )
+
+            except Exception:
+
+                pass
+
+
+
+    return True
+
+
+
+
+
+
+
+def identity_status():
+
+
+    data = load_identity()
 
 
 
@@ -242,31 +321,26 @@ def personality_report():
 
         "name":
 
-        identity["name"],
+        data["name"],
 
 
-        "role":
+        "version":
 
-        identity["role"],
+        data["version"],
 
 
-        "personality":
+        "capabilities":
 
-        identity["personality"],
+        get_capabilities()
+
+        if get_capabilities
+
+        else {},
 
 
         "status":
 
-        "active",
-
-
-        "time":
-
-        str(
-
-            datetime.datetime.now()
-
-        )
+        "active"
 
     }
 
@@ -276,5 +350,4 @@ def personality_report():
 
 
 
-
-load_identity()
+register_default_capabilities()

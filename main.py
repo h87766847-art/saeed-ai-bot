@@ -1,6 +1,7 @@
 import os
 
 from telegram import Update
+
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -12,16 +13,31 @@ from telegram.ext import (
 
 from core_router import route_message
 
+
 from brain import (
     save_conversation,
     remember_important_information,
-    init_database,
-    build_memory_context
+    init_database
 )
 
 
-from context_intelligence import (
-    get_context_information
+from response_engine import (
+    generate_response
+)
+
+
+from self_evaluator import (
+    evaluate
+)
+
+
+from reflection_engine import (
+    create_reflection
+)
+
+
+from learning_loop import (
+    add_experience
 )
 
 
@@ -31,6 +47,7 @@ from context_intelligence import (
 TOKEN = os.getenv(
     "BOT_TOKEN"
 )
+
 
 
 
@@ -48,10 +65,11 @@ async def start(
 
     await update.message.reply_text(
 
-        "سلام حسین 👋\n"
-        "سعید آماده است."
+        "سلام 👋\n"
+        "سعید AI v2 آماده است."
 
     )
+
 
 
 
@@ -77,7 +95,7 @@ async def message_handler(
 
 
 
-    # ذخیره پیام
+    # ذخیره پیام کاربر
 
     save_conversation(
 
@@ -88,13 +106,17 @@ async def message_handler(
     )
 
 
-    # تحلیل حافظه و زمینه
+
+
+    # استخراج اطلاعات مهم
 
     remember_important_information(
 
         user_text
 
     )
+
+
 
 
 
@@ -111,14 +133,92 @@ async def message_handler(
 
 
 
+
     # =====================
-    # Decision Analysis
+    # ابزار
+    # =====================
+
+    if route["type"] == "tool":
+
+
+        response = str(
+
+            route["data"]
+
+        )
+
+
+        await update.message.reply_text(
+
+            response
+
+        )
+
+
+        save_conversation(
+
+            "assistant",
+
+            response
+
+        )
+
+
+        return
+
+
+
+
+
+
+
+    # =====================
+    # تصمیم ساده
+    # =====================
+
+    if route["type"] == "decision":
+
+
+        response = str(
+
+            route["data"]
+
+        )
+
+
+        await update.message.reply_text(
+
+            response
+
+        )
+
+
+        save_conversation(
+
+            "assistant",
+
+            response
+
+        )
+
+
+        return
+
+
+
+
+
+
+
+    # =====================
+    # تحلیل تصمیم
     # =====================
 
     if route["type"] == "decision_analysis":
 
 
         analysis = route["data"]
+
 
 
         response = (
@@ -154,11 +254,14 @@ async def message_handler(
 
 
 
+
+
         await update.message.reply_text(
 
             response
 
         )
+
 
 
         save_conversation(
@@ -179,7 +282,7 @@ async def message_handler(
 
 
     # =====================
-    # Goal
+    # هدف
     # =====================
 
     if route["type"] == "goal":
@@ -192,7 +295,18 @@ async def message_handler(
         )
 
 
+
         await update.message.reply_text(
+
+            response
+
+        )
+
+
+
+        save_conversation(
+
+            "assistant",
 
             response
 
@@ -208,84 +322,11 @@ async def message_handler(
 
 
     # =====================
-    # Tool
-    # =====================
-
-    if route["type"] == "tool":
-
-
-        response = str(
-
-            route["data"]
-
-        )
-
-
-        await update.message.reply_text(
-
-            response
-
-        )
-
-
-        return
-
-
-
-
-
-
-
-    # =====================
-    # Decision ساده
-    # =====================
-
-    if route["type"] == "decision":
-
-
-        await update.message.reply_text(
-
-            route["data"]
-
-        )
-
-
-        return
-
-
-
-
-
-
-
-    # =====================
-    # Chat معمولی
+    # چت هوشمند
     # =====================
 
 
-    memory = build_memory_context()
-
-    context = get_context_information()
-
-
-
-    response = (
-
-        "🧠 وضعیت حافظه:\n"
-
-        +
-
-        context
-
-        +
-
-        "\n\n"
-
-        +
-
-        "پیام دریافت شد:\n"
-
-        +
+    response = generate_response(
 
         user_text
 
@@ -302,11 +343,57 @@ async def message_handler(
 
 
 
+
     save_conversation(
 
         "assistant",
 
         response
+
+    )
+
+
+
+
+
+
+
+    # =====================
+    # خودارزیابی و یادگیری
+    # =====================
+
+
+    evaluate(
+
+        user_text,
+
+        response,
+
+        8
+
+    )
+
+
+
+    create_reflection(
+
+        user_text,
+
+        True,
+
+        "پاسخ تولید شد و برای بهبود آینده ثبت شد"
+
+    )
+
+
+
+    add_experience(
+
+        user_text,
+
+        response,
+
+        "تجربه جدید ذخیره شد"
 
     )
 
@@ -337,6 +424,8 @@ def main():
 
 
 
+
+
     app.add_handler(
 
         CommandHandler(
@@ -348,6 +437,8 @@ def main():
         )
 
     )
+
+
 
 
 
@@ -365,13 +456,20 @@ def main():
 
 
 
+
+
     print(
-        "Saeed AI is running..."
+
+        "Saeed AI v2 is running..."
+
     )
 
 
 
+
+
     app.run_polling()
+
 
 
 

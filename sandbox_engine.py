@@ -1,6 +1,6 @@
 # sandbox_engine.py
-# Saeed Core
-# Advanced Sandbox Testing System
+# Saeed Core v7.5
+# Secure Sandbox Testing System
 
 
 import datetime
@@ -58,7 +58,7 @@ def create_test(
         "created",
 
 
-        "created_at":
+        "time":
 
         str(
 
@@ -116,6 +116,8 @@ def run_test(
 
 
 
+
+
     try:
 
 
@@ -124,7 +126,6 @@ def run_test(
 
 
         test["status"] = "passed"
-
 
 
         test["result"] = result
@@ -150,13 +151,10 @@ def run_test(
 
 
 
-
     except Exception as e:
 
 
-
         test["status"] = "failed"
-
 
 
         test["error"] = str(e)
@@ -184,12 +182,29 @@ def run_test(
 
 
 
-def get_tests():
+
+def test_component(
+
+        name,
+
+        function
+
+):
 
 
-    return list(
+    test = create_test(
 
-        TESTS.values()
+        name,
+
+        function
+
+    )
+
+
+
+    return run_test(
+
+        test["id"]
 
     )
 
@@ -200,13 +215,15 @@ def get_tests():
 
 
 
-def clear_tests():
+
+def get_tests():
 
 
-    TESTS.clear()
+    return list(
 
+        TESTS.values()
 
-    return True
+    )
 
 
 

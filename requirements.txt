@@ -1,2 +1,18 @@
-python-telegram-bot
-groq
+Flask==3.0.3
+requests==2.32.3
+python-dotenv==1.0.1
+
+# Telegram (اگر ربات تلگرام است)
+python-telegram-bot==21.4
+
+# AI / API
+openai==1.40.0
+
+# پردازش و ابزارهای عمومی
+aiohttp==3.10.5
+beautifulsoup4==4.12.3
+pytz==2024.1
+
+# فایل و داده
+PyYAML==6.0.2
+pydantic==2.8.2

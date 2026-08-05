@@ -3,18 +3,21 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def home():
     return jsonify({
         "status": "online",
-        "message": "AI Bot is running 🚀"
+        "message": "Saeed AI Bot is running"
     })
+
 
 @app.route("/health")
 def health():
     return jsonify({
         "ok": True
     })
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

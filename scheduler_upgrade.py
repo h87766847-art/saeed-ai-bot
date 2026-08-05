@@ -1,155 +1,62 @@
-# scheduler_upgrade.py
-# Saeed Core v10.4
-# Upgrade Scheduler System
-
-
 import datetime
 
 
+class UpgradeScheduler:
+
+    def __init__(self):
+        self.status = "ready"
+        self.last_check = None
+
+
+    def check_schedule(self, schedule_result):
+
+        self.last_check = datetime.datetime.now()
+
+        if not schedule_result:
+            return False
+
+
+        decision = schedule_result.get(
+            "decision"
+        )
+
+
+        return decision in [
+            "upgrade_now",
+            "scheduled"
+        ]
 
 
 
-SCHEDULE_LOG = []
+    def get_status(self):
+
+        return {
+            "system": "Saeed",
+            "scheduler": self.status,
+            "last_check": str(
+                self.last_check
+            )
+        }
 
 
 
+def run_scheduler_test():
 
+    scheduler = UpgradeScheduler()
 
-
-
-
-def check_upgrade_time(
-
-    system_state="normal",
-
-    priority="medium"
-
-):
-
-
-    result = {
-
-
-        "time":
-
-        str(datetime.datetime.now()),
-
-
-        "system_state":
-
-        system_state,
-
-
-        "priority":
-
-        priority,
-
-
-        "decision":
-
-        None
-
+    test_result = {
+        "decision": "scheduled"
     }
 
 
-
-
-
-
-
-    if system_state == "busy":
-
-
-        result["decision"] = "delay"
-
-
-
-
-
-
-    elif priority == "high":
-
-
-        result["decision"] = "upgrade_now"
-
-
-
-
-
-
-    else:
-
-
-        result["decision"] = "scheduled"
-
-
-
-
-
-
-
-    SCHEDULE_LOG.append(
-
-        result
-
+    return scheduler.check_schedule(
+        test_result
     )
 
 
 
-    return result
+if __name__ == "__main__":
 
-
-
-
-
-
-
-
-
-def can_upgrade_now(
-
-    schedule_result
-
-):
-
-
-    return schedule_result.get(
-
-        "decision"
-
-    ) == "upgrade_now"
-
-    or schedule_result.get(
-
-        "decision"
-
-    ) == "scheduled"
-
-
-
-
-
-
-
-
-
-def scheduler_status():
-
-
-    return {
-
-
-        "scheduled_checks":
-
-        len(
-
-            SCHEDULE_LOG
-
-        ),
-
-
-        "status":
-
-        "active"
-
-    }
+    print(
+        run_scheduler_test()
+    )
